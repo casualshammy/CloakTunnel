@@ -3,7 +3,7 @@
 SlowUdpPipe is an application for creating an encrypted UDP tunnel between two computers, with one computer acting as the 'server' and the other as the 'client'. Initially, SlowUdpPipe was designed to bypass WireGuard protocol blocking on Android devices, but it can be used to transmit any UDP traffic. The encrypted packets of SlowUdpPipe do not have any explicit signature and appear to censors as an unrecognized encrypted protocol. Due to this, **SlowUdpPipe is not suitable for use in networks where censorship restricts or blocks unrecognized protocols**.
 
 
-![flowchart](sut-flowchart.png)
+![flowchart](github/traffic-flow.png)
 
 # Quick start for WireGuard
 ### Server
@@ -14,6 +14,7 @@ SlowUdpPipe is an application for creating an encrypted UDP tunnel between two c
 4. Change wireguard client's `MTU` option to `1280`;
 5. Adjust `AllowedIPs` options so traffic to `<server-ip>` will not be routed via wireguard (you can use [this tool](https://www.procustodibus.com/blog/2021/03/wireguard-allowedips-calculator/)); 
 6. Run `slowudppipeclient --remote=<server-ip>:1935 --local=127.0.0.1:52280 --key=<generated-key-from-[1]>`
+![flowchart](github/wireguard-client-options-adjust.png)
 
 # Command line arguments
 SlowUdpPipe doesn't use config files, all setup is done using command line arguments:
