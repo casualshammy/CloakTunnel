@@ -1,0 +1,12 @@
+/.vs/
+/SlowUdpPipe.MauiClient/obj/
+/SlowUdpPipe.MauiClient/bin/
+/SlowUdpPipe.Client/obj/
+/SlowUdpPipe.Client/bin/
+/SlowUdpPipe.Server/obj/
+/SlowUdpPipe.Server/bin/
+/SlowUdpPipe.Common/obj/
+/SlowUdpPipe.Common/bin/
+/SlowUdpPipe.Client/Properties/launchSettings.json
+/SlowUdpPipe.MauiClient/Properties/launchSettings.json
+/SlowUdpPipe.Server/Properties/launchSettings.json

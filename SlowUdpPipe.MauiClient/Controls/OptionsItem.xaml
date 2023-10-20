@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SlowUdpPipe.MauiClient.Controls.OptionsItem">
+    
+    <Grid Margin="20, 0">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition Width="50" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition Height="2" />
+        </Grid.RowDefinitions>
+        <Grid.GestureRecognizers>
+            <TapGestureRecognizer x:Name="TapCommandHandler" />
+        </Grid.GestureRecognizers>
+        <VerticalStackLayout
+            VerticalOptions="Center"
+            Grid.Column="0"
+            Grid.Row="0">
+            <Label x:Name="TitleLabel"/>
+            <Label
+                x:Name="DetailsTextLabel"
+                TextColor="Grey"
+                FontSize="14"/>
+        </VerticalStackLayout>
+        <Switch
+            x:Name="Switch"
+            IsVisible="False"
+            Toggled="Switch_Toggled"
+            Grid.Column="1"
+            Grid.Row="0"
+            HorizontalOptions="End"
+            VerticalOptions="Center"
+            OnColor="{AppThemeBinding Light=Grey, Dark=Grey}"
+            ThumbColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource Primary}}"/>
+        <Rectangle
+            x:Name="BottomLine"
+            Grid.Column="0"
+            Grid.Row="1"
+            Grid.ColumnSpan="2"
+            VerticalOptions="End"
+            Fill="{AppThemeBinding Light=LightGrey, Dark=White}"
+            Stroke="{AppThemeBinding Light=LightGrey, Dark=White}"
+            Margin="-20, 0"
+            HeightRequest="2"/>
+    </Grid>
+</ContentView>
