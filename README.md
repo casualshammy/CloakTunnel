@@ -13,7 +13,7 @@ SlowUdpPipe is an application for creating an encrypted UDP tunnel between two c
 3. Change wireguard client's `Endpoint` option to `127.0.0.1:52280` (or any other you prefer);
 4. Change wireguard client's `MTU` option to `1280`;
 5. Adjust `AllowedIPs` options so traffic to `<server-ip>` will not be routed via wireguard (you can use [this tool](https://www.procustodibus.com/blog/2021/03/wireguard-allowedips-calculator/)); 
-6. Run `slowudppipeclient --remote=<server-ip>:1935 --local=127.0.0.1:52280 --cipher=aes-gcm-128 --key=<generated-key-from-[1]>`
+6. Run `slowudppipeclient --remote=<server-ip>:1935 --local=127.0.0.1:52280 --key=<generated-key-from-[1]>`
 
 # Command line arguments
 SlowUdpPipe doesn't use config files, all setup is done using command line arguments:
