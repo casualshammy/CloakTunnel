@@ -1,9 +1,15 @@
 # Slow Udp Pipe
-
 SlowUdpPipe is an application for creating an encrypted UDP tunnel between two computers, with one computer acting as the 'server' and the other as the 'client'. Initially, SlowUdpPipe was designed to bypass WireGuard protocol blocking on Android devices, but it can be used to transmit any UDP traffic. The encrypted packets of SlowUdpPipe do not have any explicit signature and appear to censors as an unrecognized encrypted protocol. Due to this, **SlowUdpPipe is not suitable for use in networks where censorship restricts or blocks unrecognized protocols**.
 
 
 ![flowchart](github/traffic-flow.png)
+
+## Supported Platforms
+ - [x] Windows
+ - [x] Linux
+ - [x] Android (only client)
+
+There are [releases](https://github.com/casualshammy/slow-udp-pipe/releases) for windows-x64, ubuntu-18.04-x64 and  android 8+. 
 
 # Quick start for WireGuard
 ### Server
