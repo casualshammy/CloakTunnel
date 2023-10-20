@@ -19,6 +19,11 @@
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">28.0</SupportedOSPlatformVersion>
 		<TargetPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">33</TargetPlatformVersion>
 	</PropertyGroup>
+	<PropertyGroup Condition="$(TargetFramework.Contains('-android')) and '$(Configuration)' == 'Release'">
+		<AndroidKeyStore>True</AndroidKeyStore>
+		<AndroidSigningKeyStore>slowudppipe.keystore</AndroidSigningKeyStore>
+		<AndroidSigningKeyAlias>slowudppipe</AndroidSigningKeyAlias>
+	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Ax.Fw" Version="12.1.173" />
@@ -46,17 +51,17 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Remove="_build.bat" />
+		<None Remove="_build.bat" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\SlowUdpPipe.Common\SlowUdpPipe.Common.csproj" />
+		<ProjectReference Include="..\SlowUdpPipe.Common\SlowUdpPipe.Common.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <MauiXaml Update="Controls\OptionsItem.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
+		<MauiXaml Update="Controls\OptionsItem.xaml">
+			<Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
 	</ItemGroup>
 
 </Project>

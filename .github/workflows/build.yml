@@ -1,0 +1,55 @@
+name: Build and Publish
+
+on:
+  push:
+    branches:
+      - 'dev/**'
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+    permissions: write-all
+      
+    steps:
+    - name: Get dotnet
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '7.0.x'
+      
+    - name: Install Python3   
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        architecture: 'x64'
+      
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
+        fetch-depth: 0
+
+    - name: Build Server and Client for Windows x64
+      run: python build-server-client.py --platform win-x64
+
+    - name: Build Server and Client for Ubuntu 18.04 x64
+      run: python build-server-client.py --platform ubuntu.18.04-x64
+
+    - name: Build Client for Android
+      run: python build-maui-client.py --framework net6.0-android
+      env:
+        ANDROID_SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }} 
+
+    - name: Create Github Release
+      uses: softprops/action-gh-release@v1
+      with:
+        draft: false
+        prerelease: false
+        files: |
+          artifacts/*.zip
+          artifacts/*.apk
+          artifacts/*.aab
+        name: "Release ${{ env.tag }}"
+        tag_name: "${{ env.tag }}"
+        fail_on_unmatched_files: false
+        token: ${{ secrets.GITHUB_TOKEN }}
+        generate_release_notes: false
