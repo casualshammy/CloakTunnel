@@ -4,7 +4,7 @@ public static class Converters
 {
   public static string BytesToString(long _bytesPerSecond)
   {
-    var bitsPerSecond = _bytesPerSecond * 8;
+    var bitsPerSecond = (double)_bytesPerSecond * 8;
 
     if (bitsPerSecond > 1024 * 1024 * 1024)
       return $"{bitsPerSecond / (1024 * 1024 * 1024):F2} Gbps";

@@ -115,8 +115,7 @@ public class UdpTunnelService : CAndroidService, IUdpTunnelService
     var stopServiceAction = new[] { new Notification.Action(Resource.Drawable.infinity, "Stop", stopServiceIntent) };
 
     if (Build.VERSION.SdkInt > BuildVersionCodes.SV2 && Platform.CurrentActivity != null)
-      if (ActivityCompat.ShouldShowRequestPermissionRationale(Platform.CurrentActivity, "android.permission.POST_NOTIFICATIONS"))
-        ActivityCompat.RequestPermissions(Platform.CurrentActivity, new[] { "android.permission.POST_NOTIFICATIONS" }, REQUEST_POST_NOTIFICATIONS);
+      ActivityCompat.RequestPermissions(Platform.CurrentActivity, new[] { "android.permission.POST_NOTIFICATIONS" }, REQUEST_POST_NOTIFICATIONS);
 
     var channel = new NotificationChannel(NOTIFICATION_CHANNEL, "Notify when tunnel is active", NotificationImportance.Low);
     manager.CreateNotificationChannel(channel);

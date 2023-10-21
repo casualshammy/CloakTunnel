@@ -1,7 +1,7 @@
-﻿using Ax.Fw;
-using Ax.Fw.Crypto;
+﻿using Ax.Fw.Crypto;
 using Ax.Fw.Extensions;
 using Ax.Fw.SharedTypes.Interfaces;
+using Grace.DependencyInjection;
 using JustLogger.Interfaces;
 using SlowUdpPipe.Common.Data;
 using System.Collections.Concurrent;
@@ -10,6 +10,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Text;
 
 namespace SlowUdpPipe.Common.Modules;
 
@@ -26,6 +27,7 @@ public class UdpTunnelServer
   private readonly Socket p_listenSocket;
   private readonly ConcurrentDictionary<EndPoint, ClientInfo> p_clients = new();
   private readonly ReplaySubject<UdpTunnelStat> p_stats;
+  private readonly Subject<EndPoint> p_clientUnknownEncryptionSubj;
   private long p_byteRecvCount;
   private long p_byteSentCount;
 
@@ -38,6 +40,7 @@ public class UdpTunnelServer
     p_lifetime = _lifetime;
     p_logger = _logger;
     p_stats = _lifetime.ToDisposeOnEnded(new ReplaySubject<UdpTunnelStat>(1));
+    p_clientUnknownEncryptionSubj = _lifetime.ToDisposeOnEnded(new Subject<EndPoint>());
 
     p_listenSocket = _lifetime.ToDisposeOnEnded(new Socket(p_options.Local.Address.AddressFamily, SocketType.Dgram, ProtocolType.Udp));
     p_listenSocket.Bind(p_options.Local);
@@ -79,6 +82,17 @@ public class UdpTunnelServer
               p_logger.Info($"[{endPoint}] Client is disconnected due to inactivity; total clients: {p_clients.Count}");
             }
       }, _lifetime);
+
+    p_clientUnknownEncryptionSubj
+      .Buffer(TimeSpan.FromSeconds(5))
+      .Subscribe(_errors =>
+      {
+        if (!_errors.Any())
+          return;
+
+        foreach (var endpoint in _errors.Distinct())
+          _logger.Warn($"[{endpoint}] Client tried to connect with unknown encryption algorithm (or it wasn't a slowudppipe client)");
+      }, _lifetime);
   }
 
   public IObservable<UdpTunnelStat> Stats => p_stats;
@@ -103,7 +117,14 @@ public class UdpTunnelServer
 
           if (!p_clients.TryGetValue(clientEndpoint, out var client))
           {
-            p_clients.TryAdd(clientEndpoint, client = AllocateNewClient(p_listenSocket, clientEndpoint, receivedSpan, out var alg));
+            var newClient = AllocateNewClient(p_listenSocket, clientEndpoint, receivedSpan, out var alg);
+            if (newClient == null)
+            {
+              p_clientUnknownEncryptionSubj.OnNext(clientEndpoint);
+              continue;
+            }
+
+            p_clients.TryAdd(clientEndpoint, client = newClient);
             p_logger.Info($"[{clientEndpoint}] Client connected (alg: {alg}); total clients: {p_clients.Count}");
           }
 
@@ -112,6 +133,10 @@ public class UdpTunnelServer
           client.Socket.SendTo(dataToSend, SocketFlags.None, sendEndPoint);
           Interlocked.Add(ref p_byteSentCount, dataToSend.Length);
         }
+      }
+      catch (SocketException sex0) when (sex0.ErrorCode == 10004) // Interrupted function call
+      {
+        // ignore (caused be client cleanup)
       }
       catch (SocketException sex) when (sex.ErrorCode == 10054) // Connection reset by peer.
       {
@@ -167,6 +192,10 @@ public class UdpTunnelServer
       {
         // ignore (caused be client cleanup)
       }
+      catch (SocketException sexi)
+      {
+        p_logger.Error($"Local interface SocketException error; code: '{sexi.ErrorCode}'", sexi);
+      }
       catch (Exception ex)
       {
         p_logger.Error("Remote interface error", ex);
@@ -176,14 +205,17 @@ public class UdpTunnelServer
     p_logger.Info($"[{_clientEndPoint}] Socket routine is ended");
   }
 
-  private ClientInfo AllocateNewClient(Socket _listenSocket, EndPoint _clientEndpoint, Span<byte> _firstChunk, out EncryptionAlgorithm _encryptionAlgorithm)
+  private ClientInfo? AllocateNewClient(Socket _listenSocket, EndPoint _clientEndpoint, Span<byte> _firstChunk, out EncryptionAlgorithm _encryptionAlgorithm)
   {
     var lifetime = p_lifetime.GetChildLifetime();
     if (lifetime != null)
     {
       EncryptionAlgorithm? alg;
       if (!TryGuessEncryptionAlgorithm(_firstChunk, out alg))
-        alg = EncryptionAlgorithm.AesGcm256;
+      {
+        _encryptionAlgorithm = EncryptionAlgorithm.None;
+        return null;
+      }
 
       var decryptor = GetCrypto(lifetime, alg.Value);
 
@@ -213,6 +245,7 @@ public class UdpTunnelServer
       EncryptionAlgorithm.AesGcm128 => new AesWithGcm(_lifetime, p_options.Key, 128),
       EncryptionAlgorithm.AesGcm256 => new AesWithGcm(_lifetime, p_options.Key, 256),
       EncryptionAlgorithm.ChaCha20Poly1305 => new ChaCha20WithPoly1305(_lifetime, p_options.Key),
+      EncryptionAlgorithm.Xor => new Xor(Encoding.UTF8.GetBytes(p_options.Key)),
       _ => throw new InvalidOperationException($"Crypto algorithm is not specified!"),
     };
   }
@@ -232,7 +265,8 @@ public class UdpTunnelServer
       { EncryptionAlgorithm.Aes256,() =>  new AesCbc(lifetime, key, 256) },
       { EncryptionAlgorithm.AesGcm128,() =>  new AesWithGcm(lifetime, key, 128) },
       { EncryptionAlgorithm.AesGcm256, () => new AesWithGcm(lifetime, key, 256) },
-      { EncryptionAlgorithm.ChaCha20Poly1305,() => new ChaCha20WithPoly1305(lifetime, key) }
+      { EncryptionAlgorithm.ChaCha20Poly1305,() => new ChaCha20WithPoly1305(lifetime, key) },
+      { EncryptionAlgorithm.Xor, () => new Xor(Encoding.UTF8.GetBytes(key)) }
     };
 
     foreach (var (algName, algFactory) in algorithms)

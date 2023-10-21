@@ -59,7 +59,7 @@ public partial class MainPage : CContentPage
                 "Understood");
 
             if (goToWebsite)
-              await Launcher.Default.OpenAsync("https://github.com/casualshammy/slow-udp-tunnel");
+              await Launcher.Default.OpenAsync("https://github.com/casualshammy/slow-udp-pipe");
           });
         }
       })
@@ -148,6 +148,8 @@ public partial class MainPage : CContentPage
     {
       if (score == null)
         message += $"Cipher '{algo}' is not supported on this platform\n";
+      else if (algo == Common.Data.EncryptionAlgorithm.Xor)
+        message += $"{algo} (may be detectable): {minScore * 100 / score}\n";
       else
         message += $"{algo}: {minScore * 100 / score}\n";
     }

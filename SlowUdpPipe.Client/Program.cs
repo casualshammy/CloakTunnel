@@ -23,18 +23,7 @@ public class Program
 
     if (_args?.Length == 1 && _args[0] == "test")
     {
-      logger.Info($"================ Running benchmark, please wait.. ================");
-      var result = EncryptionAlgorithmsTest.Test(lifetime, null);
-      var minScore = result.Min(_ => _.Value ?? long.MaxValue);
-      logger.Warn($"=========== Performance per algorithm (more is better) ===========");
-      foreach (var (algo, score) in result)
-      {
-        if (score == null)
-          logger.Warn($"Ciphers '{algo}' is not supported on this platform");
-        else
-          logger.Info($"{algo}: {minScore * 100 / score}");
-      }
-      logger.Warn($"==================================================================");
+      EncryptionAlgorithmsTest.TestAndPrintInConsole(lifetime, logger);
       return;
     }
 
@@ -89,9 +78,22 @@ public class Program
       .AddSingleton<ISettingsProvider>(settingsProvider)
       .Build();
 
-    await Task.Delay(-1);
+    void onCancelKeyPress(object? _o, ConsoleCancelEventArgs _e)
+    {
+      _e.Cancel = true;
+      Console.CancelKeyPress -= onCancelKeyPress;
+      lifetime.End();
+    }
+    Console.CancelKeyPress += onCancelKeyPress;
 
-    lifetime.End();
+    try
+    {
+      await Task.Delay(-1, lifetime.Token);
+    }
+    catch (TaskCanceledException)
+    {
+      // ignore
+    }
   }
 
 }

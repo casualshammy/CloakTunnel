@@ -1,7 +1,4 @@
-﻿using Android.Gms.Auth.Api.SignIn.Internal;
-using Android.Locations;
-using Ax.Fw;
-using Ax.Fw.Extensions;
+﻿using Ax.Fw.Extensions;
 using Ax.Fw.SharedTypes.Interfaces;
 using SlowUdpPipe.Common.Data;
 using SlowUdpPipe.MauiClient.Interfaces;
@@ -162,7 +159,8 @@ internal class MainPageViewModel : BaseViewModel
       { "aes-256", EncryptionAlgorithm.Aes256 },
       { "aes-gcm-128", EncryptionAlgorithm.AesGcm128 },
       { "aes-gcm-256", EncryptionAlgorithm.AesGcm256 },
-      { "chacha20-poly1305", EncryptionAlgorithm.ChaCha20Poly1305 }
+      { "chacha20-poly1305", EncryptionAlgorithm.ChaCha20Poly1305 },
+      { "xor (may be detectable)", EncryptionAlgorithm.Xor }
     };
 
     var result = await currentPage.DisplayActionSheet("Please select cypher", null, null, options.Keys.ToArray());

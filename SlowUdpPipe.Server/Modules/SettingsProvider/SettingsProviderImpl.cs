@@ -37,6 +37,8 @@ internal class SettingsProviderImpl : ISettingsProvider
       algs.Add(EncryptionAlgorithm.AesGcm256);
     if (_options.Ciphers?.Contains("chacha20-poly1305") == true)
       algs.Add(EncryptionAlgorithm.ChaCha20Poly1305);
+    if (_options.Ciphers?.Contains("xor") == true)
+      algs.Add(EncryptionAlgorithm.Xor);
 
     if (algs.Any())
       Algorithms = algs;

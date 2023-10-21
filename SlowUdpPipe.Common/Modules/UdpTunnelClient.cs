@@ -8,6 +8,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Text;
 
 namespace SlowUdpPipe.Common.Modules;
 
@@ -205,6 +206,7 @@ public class UdpTunnelClient
       EncryptionAlgorithm.AesGcm128 => new AesWithGcm(_lifetime, p_options.Key, 128),
       EncryptionAlgorithm.AesGcm256 => new AesWithGcm(_lifetime, p_options.Key, 256),
       EncryptionAlgorithm.ChaCha20Poly1305 => new ChaCha20WithPoly1305(_lifetime, p_options.Key),
+      EncryptionAlgorithm.Xor => new Xor(Encoding.UTF8.GetBytes(p_options.Key)),
       _ => throw new InvalidOperationException($"Crypto algorithm is not specified!"),
     };
   }

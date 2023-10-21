@@ -13,7 +13,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Ax.Fw" Version="12.1.173" />
+		<PackageReference Include="Ax.Fw" Version="12.1.176" />
 		<PackageReference Include="JustLogger" Version="2.3.1" />
 		<PackageReference Include="System.Linq.Async" Version="6.0.1" />
 		<PackageReference Include="CommandLineParser" Version="2.9.1" />

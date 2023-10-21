@@ -31,6 +31,8 @@ internal class SettingsProviderImpl : ISettingsProvider
       Algorithm = EncryptionAlgorithm.AesGcm256;
     else if (alg == "chacha20-poly1305")
       Algorithm = EncryptionAlgorithm.ChaCha20Poly1305;
+    else if (alg == "xor")
+      Algorithm = EncryptionAlgorithm.Xor;
     else
       Algorithm = EncryptionAlgorithm.AesGcm128;
   }
