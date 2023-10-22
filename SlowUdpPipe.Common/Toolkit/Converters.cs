@@ -2,10 +2,12 @@
 
 public static class Converters
 {
-  public static string BytesToString(long _bytesPerSecond)
+  public static string BytesToString(ulong _bytesPerSecond)
   {
     var bitsPerSecond = (double)_bytesPerSecond * 8;
 
+    if (bitsPerSecond > (ulong)1024 * 1024 * 1024 * 1024)
+      return $"{bitsPerSecond / ((ulong)1024 * 1024 * 1024 * 1024):F2} Tbps";
     if (bitsPerSecond > 1024 * 1024 * 1024)
       return $"{bitsPerSecond / (1024 * 1024 * 1024):F2} Gbps";
     if (bitsPerSecond > 1024 * 1024)

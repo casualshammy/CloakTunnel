@@ -28,8 +28,8 @@ public class UdpTunnelServer
   private readonly ConcurrentDictionary<EndPoint, ClientInfo> p_clients = new();
   private readonly ReplaySubject<UdpTunnelStat> p_stats;
   private readonly Subject<EndPoint> p_clientUnknownEncryptionSubj;
-  private long p_byteRecvCount;
-  private long p_byteSentCount;
+  private ulong p_byteRecvCount;
+  private ulong p_byteSentCount;
 
   public UdpTunnelServer(
     UdpTunnelServerOptions _options,
@@ -51,7 +51,7 @@ public class UdpTunnelServer
     Observable
       .Interval(TimeSpan.FromSeconds(1))
       .StartWithDefault()
-      .Scan((Sent: -1L, Recv: -1L, Timestamp: 0L), (_acc, _) =>
+      .Scan((Sent: 0UL, Recv: 0UL, Timestamp: 0L), (_acc, _) =>
       {
         var tickCount = Environment.TickCount64;
         var tx = Interlocked.Read(ref p_byteSentCount);
@@ -61,8 +61,8 @@ public class UdpTunnelServer
         if (delta == 0d)
           return _acc;
 
-        var txDelta = (long)((tx - _acc.Sent) / delta);
-        var rxDelta = (long)((rx - _acc.Recv) / delta);
+        var txDelta = (ulong)((tx - _acc.Sent) / delta);
+        var rxDelta = (ulong)((rx - _acc.Recv) / delta);
         p_stats.OnNext(new UdpTunnelStat(txDelta, rxDelta));
 
         return (tx, rx, tickCount);
@@ -101,7 +101,7 @@ public class UdpTunnelServer
   {
     Span<byte> buffer = new byte[128 * 1024];
     EndPoint clientEndpoint = new IPEndPoint(IPAddress.Any, short.MaxValue);
-    var sendEndPoint = p_options.Remote;
+    var remoteEndpoint = p_options.Remote;
 
     p_logger.Info($"Listening socket routine is started");
 
@@ -112,7 +112,7 @@ public class UdpTunnelServer
         var receivedBytes = p_listenSocket.ReceiveFrom(buffer, SocketFlags.None, ref clientEndpoint);
         if (receivedBytes > 0)
         {
-          Interlocked.Add(ref p_byteRecvCount, receivedBytes);
+          Interlocked.Add(ref p_byteRecvCount, (ulong)receivedBytes);
           var receivedSpan = buffer.Slice(0, receivedBytes);
 
           if (!p_clients.TryGetValue(clientEndpoint, out var client))
@@ -130,8 +130,7 @@ public class UdpTunnelServer
 
           var dataToSend = client.Decryptor.Decrypt(receivedSpan);
           client.Timestamp = Environment.TickCount64;
-          client.Socket.SendTo(dataToSend, SocketFlags.None, sendEndPoint);
-          Interlocked.Add(ref p_byteSentCount, dataToSend.Length);
+          client.Socket.SendTo(dataToSend, SocketFlags.None, remoteEndpoint);
         }
       }
       catch (SocketException sex0) when (sex0.ErrorCode == 10004) // Interrupted function call
@@ -163,7 +162,7 @@ public class UdpTunnelServer
     IReadOnlyLifetime _lifetime)
   {
     Span<byte> buffer = new byte[128 * 1024];
-    EndPoint clientEndpoint = new IPEndPoint(IPAddress.Any, short.MaxValue);
+    EndPoint localServiceEndpoint = new IPEndPoint(IPAddress.Any, short.MaxValue);
     var encryptor = GetCrypto(_lifetime, _algorithm);
 
     p_logger.Info($"[{_clientEndPoint}] Socket routine is started");
@@ -178,14 +177,12 @@ public class UdpTunnelServer
           continue;
         }
 
-        var receivedBytes = _sendSocket.ReceiveFrom(buffer, SocketFlags.None, ref clientEndpoint);
+        var receivedBytes = _sendSocket.ReceiveFrom(buffer, SocketFlags.None, ref localServiceEndpoint);
         if (receivedBytes > 0)
         {
-          Interlocked.Add(ref p_byteRecvCount, receivedBytes);
           var dataToSend = encryptor.Encrypt(buffer.Slice(0, receivedBytes));
-
           _listenSocket.SendTo(dataToSend, SocketFlags.None, _clientEndPoint);
-          Interlocked.Add(ref p_byteSentCount, dataToSend.Length);
+          Interlocked.Add(ref p_byteSentCount, (ulong)dataToSend.Length);
         }
       }
       catch (SocketException sex) when (sex.ErrorCode == 10004) // Interrupted function call
