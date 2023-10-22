@@ -20,7 +20,6 @@ internal class MainPageViewModel : BaseViewModel
   private string? p_trucatedKey;
   private string? p_startStopBtnText;
   private Color? p_startStopBtnColor;
-  private bool p_upTunnelOnAppStartup;
 
   public MainPageViewModel()
   {
@@ -33,6 +32,7 @@ internal class MainPageViewModel : BaseViewModel
     LocalAddressCommand = new Command(OnLocalAddress);
     CipherCommand = new Command(OnCipher);
     KeyCommand = new Command(OnKey);
+    UpTunnelOnAppStartupCommand = new Command(OnUpTunnelOnAppStartup);
 
     var lifetime = Container.Locate<IReadOnlyLifetime>();
     p_preferences.PreferencesChanged
@@ -50,7 +50,6 @@ internal class MainPageViewModel : BaseViewModel
         SetProperty(ref p_remoteAddress, p_preferences.GetValueOrDefault<string>(PREF_DB_REMOTE), nameof(RemoteAddress));
         SetProperty(ref p_localAddress, p_preferences.GetValueOrDefault<string>(PREF_DB_LOCAL), nameof(LocalAddress));
         SetProperty(ref p_cipher, p_preferences.GetValueOrDefault<EncryptionAlgorithm>(PREF_DB_CIPHER), nameof(Cipher));
-        SetProperty(ref p_upTunnelOnAppStartup, p_preferences.GetValueOrDefault<bool>(PREF_DB_UP_TUNNEL_ON_APP_STARTUP), nameof(UpTunnelOnAppStartup));
       }, lifetime);
   }
 
@@ -86,16 +85,12 @@ internal class MainPageViewModel : BaseViewModel
     get => p_startStopBtnColor ?? Color.Parse("GreenYellow");
     set => SetProperty(ref p_startStopBtnColor, value, nameof(StartStopBtnColor));
   }
-  public bool UpTunnelOnAppStartup
-  {
-    get => p_upTunnelOnAppStartup;
-    set => p_preferences.SetValue(PREF_DB_UP_TUNNEL_ON_APP_STARTUP, value);
-  }
-
+  
   public ICommand RemoteAddressCommand { get; }
   public ICommand LocalAddressCommand { get; }
   public ICommand CipherCommand { get; }
   public ICommand KeyCommand { get; }
+  public ICommand UpTunnelOnAppStartupCommand { get; }
 
   private async void OnRemoteAddress(object _arg)
   {
@@ -193,6 +188,14 @@ internal class MainPageViewModel : BaseViewModel
     }
 
     Key = text;
+  }
+
+  private void OnUpTunnelOnAppStartup(object _arg)
+  {
+    if (_arg is not bool toggled)
+      return;
+
+    p_preferences.SetValue(PREF_DB_UP_TUNNEL_ON_APP_STARTUP, toggled);
   }
 
 }

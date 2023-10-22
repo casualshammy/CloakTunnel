@@ -31,14 +31,14 @@ public partial class MainPage : CContentPage
     InitializeComponent();
     p_bindingCtx = (MainPageViewModel)BindingContext;
 
-    p_upTunnelOnStart.SwitchIsToggled = p_bindingCtx.UpTunnelOnAppStartup;
-
     var pageController = Container.Locate<IPagesController>();
     pageController.OnMainPage(this);
 
     p_prefStorage = Container.Locate<IPreferencesStorage>();
     p_lifetime = Container.Locate<IReadOnlyLifetime>();
     p_udpTunnelCtrl = Container.Locate<IUdpTunnelCtrl>();
+
+    p_upTunnelOnStart.SwitchIsToggled = p_prefStorage.GetValueOrDefault<bool>(PREF_DB_UP_TUNNEL_ON_APP_STARTUP);
 
     p_appearingSubj
       .Take(1)
@@ -103,7 +103,6 @@ public partial class MainPage : CContentPage
 
         if (result)
         {
-          //var context = global::Android.App.Application.Context;
           var intent = new Intent();
           intent.SetFlags(ActivityFlags.NewTask);
           intent.SetAction(Android.Provider.Settings.ActionApplicationDetailsSettings);
@@ -126,35 +125,46 @@ public partial class MainPage : CContentPage
 
     var btn = _sender as Button;
     var btnOriginalText = btn?.Text;
+    if (btn != null)
+      btn.IsEnabled = false;
 
-    void updateProgress(double _progress)
+    try
     {
-      if (btn == null)
-        return;
-
-      MainThread.BeginInvokeOnMainThread(() =>
+      void updateProgress(double _progress)
       {
-        btn.Text = $"Benchmarking ({_progress * 100:F0}%)";
-      });
+        if (btn == null)
+          return;
+
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+          btn.Text = $"Benchmarking ({_progress * 100:F0}%)";
+        });
+      }
+
+      var result = await Task.Run(() => EncryptionAlgorithmsTest.Test(lifetime, updateProgress));
+
+
+      var minScore = result.Min(_ => _.Value ?? long.MaxValue);
+      var message = "More is better\n\n";
+      foreach (var (algo, score) in result)
+      {
+        if (score == null)
+          message += $"Cipher '{algo}' is not supported on this platform\n";
+        else if (algo == Common.Data.EncryptionAlgorithm.Xor)
+          message += $"{algo} (may be detectable): {minScore * 100 / score}\n";
+        else
+          message += $"{algo}: {minScore * 100 / score}\n";
+      }
+
+      await DisplayAlert("Benchmark results", message, "Close");
     }
-
-    var result = await Task.Run(() => EncryptionAlgorithmsTest.Test(lifetime, updateProgress));
-    if (btn != null && btnOriginalText != null)
-      btn.Text = btnOriginalText;
-
-    var minScore = result.Min(_ => _.Value ?? long.MaxValue);
-    var message = "More is better\n\n";
-    foreach (var (algo, score) in result)
+    finally
     {
-      if (score == null)
-        message += $"Cipher '{algo}' is not supported on this platform\n";
-      else if (algo == Common.Data.EncryptionAlgorithm.Xor)
-        message += $"{algo} (may be detectable): {minScore * 100 / score}\n";
-      else
-        message += $"{algo}: {minScore * 100 / score}\n";
+      if (btn != null && btnOriginalText != null)
+        btn.Text = btnOriginalText;
+      if (btn != null)
+        btn.IsEnabled = true;
     }
-
-    await DisplayAlert("Benchmark results", message, "Close");
   }
 
 }

@@ -1,3 +1,4 @@
+
 # Slow Udp Pipe
 SlowUdpPipe is an application for creating an encrypted UDP tunnel between two computers, with one computer acting as the 'server' and the other as the 'client'. Initially, SlowUdpPipe was designed to bypass WireGuard protocol blocking on Android devices, but it can be used to transmit any UDP traffic. The encrypted packets of SlowUdpPipe do not have any explicit signature and appear to censors as an unrecognized encrypted protocol. Due to this, **SlowUdpPipe is not suitable for use in networks where censorship restricts or blocks unrecognized protocols**.
 
@@ -9,7 +10,7 @@ SlowUdpPipe is an application for creating an encrypted UDP tunnel between two c
  - [x] Linux
  - [x] Android (only client)
 
-There are [releases](https://github.com/casualshammy/slow-udp-pipe/releases) for windows-x64, ubuntu-18.04-x64 and  android 8+. 
+There are [releases](https://github.com/casualshammy/slow-udp-pipe/releases) for windows-x64, ubuntu-18.04-x64 and  android 9+. 
 
 # Quick start for WireGuard
 ### Server
@@ -29,8 +30,8 @@ SlowUdpPipe doesn't use config files, all setup is done using command line argum
   - `--remote=<host:port>` : SlowUdpPipe will send processed traffic to this address
   - `--local=<host:port>` : SlowUdpPipe will listen for incoming traffic to this address
   - `--key=<key>` : this key will be used to encrypt data. Key **must be the same** on `client` and `server`. `Server` will not respond to packets encrypted with wrong key, so censors will not be able to detect SlowUdpPipe server instance using scanning (but of course server instance will be detectable while serving traffic for clients).
-  - `--cyphers=<cyphers>` : (optional, server-only) server will accept clients that use this ciphers. Valid cyphers: `aes-128`, `aes-256`, `aes-gcm-128`, `aes-gcm-256`, `chacha20-poly1305`. If omitted all cyphers will be accepted. Some cyphers are not available on all platforms, please use `test` command to get additional info.
-  - `--cypher=<cypher>` : (optional, client-only) client will be use this cipher to encrypt data. Valid cyphers: `aes-128`, `aes-256`, `aes-gcm-128`, `aes-gcm-256`, `chacha20-poly1305`. If omitted `aes-gcm-128` will be used. Some cyphers are not available on all platforms, please use `test` command to get additional info. 
+  - `--cyphers=<cyphers>` : (optional, server-only) server will accept clients that use this ciphers. Valid cyphers: `aes-128`, `aes-256`, `aes-gcm-128`, `aes-gcm-256`, `chacha20-poly1305`, `xor`. If omitted all cyphers will be accepted. Some cyphers are not available on all platforms, please use `test` command to get additional info.
+  - `--cypher=<cypher>` : (optional, client-only) client will be use this cipher to encrypt data. Valid cyphers: `aes-128`, `aes-256`, `aes-gcm-128`, `aes-gcm-256`, `chacha20-poly1305`, `xor`. If omitted `aes-gcm-128` will be used. Some cyphers are not available on all platforms, please use `test` command to get additional info. 
 
 ### Why 'Slow'
 Because the performance of SlowUdpPipe is insufficient to provide an transfer speed of 1Gbps on cheap VPS. But it is fast enought to provide an transfer speed of 100Mbps on 6$ DigitalOcean droplet.

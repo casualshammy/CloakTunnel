@@ -74,7 +74,7 @@
                     Title="Bring up udp tunnel on app startup"
                     DetailsText="When you start app udp tunnel will be launched automatically"
                     ShowSwitch="True"
-                    SwitchTapped="{Binding WipeOldTrackOnNewCommand}"
+                    SwitchTapped="{Binding UpTunnelOnAppStartupCommand}"
                     ShowBottomLine="True"/>
             </VerticalStackLayout>
         </ScrollView>

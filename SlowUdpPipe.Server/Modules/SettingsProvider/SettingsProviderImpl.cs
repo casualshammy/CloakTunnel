@@ -12,7 +12,8 @@ internal class SettingsProviderImpl : ISettingsProvider
     EncryptionAlgorithm.Aes256,
     EncryptionAlgorithm.AesGcm128,
     EncryptionAlgorithm.AesGcm256,
-    EncryptionAlgorithm.ChaCha20Poly1305
+    EncryptionAlgorithm.ChaCha20Poly1305,
+    EncryptionAlgorithm.Xor
   };
 
   public SettingsProviderImpl(Options _options)
