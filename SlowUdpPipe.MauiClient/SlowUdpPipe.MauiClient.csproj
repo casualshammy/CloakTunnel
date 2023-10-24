@@ -50,6 +50,15 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <AndroidResource Remove="whats-new\**" />
+	  <Compile Remove="whats-new\**" />
+	  <EmbeddedResource Remove="whats-new\**" />
+	  <MauiCss Remove="whats-new\**" />
+	  <MauiXaml Remove="whats-new\**" />
+	  <None Remove="whats-new\**" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<None Remove="_build.bat" />
 	</ItemGroup>
 

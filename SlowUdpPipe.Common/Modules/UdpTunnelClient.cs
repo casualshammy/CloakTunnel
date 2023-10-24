@@ -111,7 +111,11 @@ public class UdpTunnelClient
           Interlocked.Add(ref p_byteSentCount, (ulong)dataToSend.Length);
         }
       }
-      catch (SocketException sex) when (sex.ErrorCode == 10054) // Connection reset by peer.
+      catch (SocketException sex0) when (sex0.ErrorCode == 10004) // Interrupted function call
+      {
+        // ignore (caused by client disconnection)
+      }
+      catch (SocketException sex1) when (sex1.ErrorCode == 10054) // Connection reset by peer.
       {
         // ignore (caused by client disconnection)
       }

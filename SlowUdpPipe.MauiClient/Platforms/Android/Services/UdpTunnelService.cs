@@ -59,11 +59,16 @@ public class UdpTunnelService : CAndroidService, IUdpTunnelService
         StartForeground(NOTIFICATION_ID, notification);
 
       UdpTunnelCtrl.TunnelStats
-        .DistinctUntilChanged()
-        .Sample(TimeSpan.FromSeconds(3))
-        .Subscribe(_s =>
+        .Buffer(TimeSpan.FromSeconds(3))
+        .Subscribe(_list =>
         {
-          var text = $"Rx: {Converters.BytesToString(_s.RxBytePerSecond)}; Tx: {Converters.BytesToString(_s.TxBytePerSecond)}";
+          if (!_list.Any())
+            return;
+
+          var avgRx = _list.Average(_ => (long)_.RxBytePerSecond);
+          var avgTx = _list.Average(_ => (long)_.TxBytePerSecond);
+
+          var text = $"Rx: {Converters.BytesPerSecondToString(avgRx)}; Tx: {Converters.BytesPerSecondToString(avgTx)}";
           UpdateNotificationText($"Udp tunnel is up", text, p_lifetime.Token);
         }, p_lifetime);
 
@@ -163,7 +168,9 @@ public class UdpTunnelService : CAndroidService, IUdpTunnelService
      .SetSmallIcon(Resource.Drawable.infinity)
      .SetOnlyAlertOnce(true)
      .SetOngoing(true)
-     .SetActions(stopServiceAction);
+     .SetActions(stopServiceAction)
+     .SetShowWhen(true)
+     .SetWhen(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
 
     var notification = builder.Build();
 

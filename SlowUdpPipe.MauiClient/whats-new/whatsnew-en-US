@@ -1,0 +1,3 @@
+  - traffic info in notification is correctly calculated now
+  - now user can't do multiple benchmark simultaneously
+  - fixed broken `start tunnel on app startup` feature

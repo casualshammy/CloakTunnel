@@ -53,3 +53,12 @@ jobs:
         fail_on_unmatched_files: false
         token: ${{ secrets.GITHUB_TOKEN }}
         generate_release_notes: false
+
+    - name: Upload Google Console Release
+      uses: r0adkll/upload-google-play@v1
+      with:
+        serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        packageName: com.axiolab.slowudppipe
+        releaseFiles: artifacts/*.aab
+        track: internal
+        whatsNewDirectory: SlowUdpPipe.MauiClient/whats-new
