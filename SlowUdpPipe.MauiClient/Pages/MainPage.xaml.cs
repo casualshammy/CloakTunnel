@@ -2,7 +2,6 @@
 using Android.OS;
 using Ax.Fw.Extensions;
 using Ax.Fw.SharedTypes.Interfaces;
-using CommunityToolkit.Maui.Alerts;
 using JustLogger.Interfaces;
 using SlowUdpPipe.Common.Toolkit;
 using SlowUdpPipe.MauiClient.Interfaces;
@@ -69,7 +68,7 @@ public partial class MainPage : CContentPage
       .Subscribe(_tunnelState =>
       {
         p_bindingCtx.StartStopBtnText = _tunnelState ? "Stop tunnel" : "Start tunnel";
-        p_bindingCtx.StartStopBtnColor = _tunnelState ? Color.Parse("Red") : Color.Parse("GreenYellow");
+        p_bindingCtx.StartStopBtnColor = _tunnelState ? COLOR_UP_TUNNEL_ON : COLOR_UP_TUNNEL_OFF;
       }, p_lifetime);
   }
 

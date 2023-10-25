@@ -82,7 +82,7 @@ internal class MainPageViewModel : BaseViewModel
   }
   public Color StartStopBtnColor
   {
-    get => p_startStopBtnColor ?? Color.Parse("GreenYellow");
+    get => p_startStopBtnColor ?? COLOR_UP_TUNNEL_OFF;
     set => SetProperty(ref p_startStopBtnColor, value, nameof(StartStopBtnColor));
   }
   

@@ -84,7 +84,7 @@
             HorizontalOptions="FillAndExpand"
             Margin="10, 0, 10, 10"
             Text="Benchmark encryption algorithms"
-            TextColor="Black" 
+            TextColor="FloralWhite" 
             FontSize="Medium"
             Clicked="Benchmark_Clicked"/>
         <Button

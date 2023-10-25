@@ -26,9 +26,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Ax.Fw" Version="12.1.176" />
 		<PackageReference Include="CommunityToolkit.Maui" Version="[2.0.0]" />
-		<PackageReference Include="JustLogger" Version="2.3.1" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -59,6 +57,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<None Remove="Platforms\Android\Resources\values-night\colors.xml" />
 		<None Remove="_build.bat" />
 	</ItemGroup>
 
