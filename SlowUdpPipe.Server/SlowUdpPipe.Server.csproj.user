@@ -4,6 +4,6 @@
     <DebuggerFlavor>ProjectDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup>
-    <ActiveDebugProfile>server</ActiveDebugProfile>
+    <ActiveDebugProfile>local</ActiveDebugProfile>
   </PropertyGroup>
 </Project>

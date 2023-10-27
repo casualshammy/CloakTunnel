@@ -36,6 +36,8 @@ public class UdpTunnelServer
     IReadOnlyLifetime _lifetime,
     ILogger _logger)
   {
+    _lifetime.DoOnEnded(() => _logger.Info($"Udp tunnel is closed"));
+
     p_options = _options;
     p_lifetime = _lifetime;
     p_logger = _logger;
@@ -43,7 +45,20 @@ public class UdpTunnelServer
     p_clientUnknownEncryptionSubj = _lifetime.ToDisposeOnEnded(new Subject<EndPoint>());
 
     p_listenSocket = _lifetime.ToDisposeOnEnded(new Socket(p_options.Local.Address.AddressFamily, SocketType.Dgram, ProtocolType.Udp));
-    p_listenSocket.Bind(p_options.Local);
+    try
+    {
+      p_listenSocket.Bind(p_options.Local);
+    }
+    catch (SocketException sex) when (sex.SocketErrorCode == SocketError.AddressAlreadyInUse)
+    {
+      p_logger.Error($"Can't bind to address {p_options.Local}: already in use");
+      return;
+    }
+    catch (Exception ex)
+    {
+      p_logger.Error($"Can't bind to address {p_options.Local}: {ex.Message}");
+      return;
+    }
 
     var listenerThread = new Thread(() => CreateListeningSocketRoutine(_lifetime)) { Priority = ThreadPriority.Highest };
     listenerThread.Start();
@@ -268,7 +283,7 @@ public class UdpTunnelServer
 
     foreach (var (algName, algFactory) in algorithms)
     {
-      if (!p_options.Ciphers.Contains(algName))
+      if (!p_options.Algorithms.Contains(algName))
         continue;
 
       try

@@ -11,3 +11,5 @@
 /SlowUdpPipe.MauiClient/Properties/launchSettings.json
 /SlowUdpPipe.Server/Properties/launchSettings.json
 /SlowUdpPipe.Client/SlowUdpPipe.Client.csproj.user
+/SlowUdpPipe.Client/local.json
+/SlowUdpPipe.Server/local.json

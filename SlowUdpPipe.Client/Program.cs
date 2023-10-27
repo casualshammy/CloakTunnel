@@ -4,6 +4,7 @@ using Ax.Fw.SharedTypes.Interfaces;
 using CommandLine;
 using JustLogger;
 using JustLogger.Interfaces;
+using SlowUdpPipe.Client.Data;
 using SlowUdpPipe.Client.Interfaces;
 using SlowUdpPipe.Client.Modules.SettingsProvider;
 using SlowUdpPipe.Common.Toolkit;
@@ -36,7 +37,7 @@ public class Program
     }
 
     var options = Parser.Default
-      .ParseArguments<Options>(_args);
+      .ParseArguments<CommandLineOptions>(_args);
 
     if (options.Value == null)
       return;
@@ -44,7 +45,7 @@ public class Program
     SettingsProviderImpl settingsProvider;
     try
     {
-      settingsProvider = new SettingsProviderImpl(options.Value);
+      settingsProvider = new SettingsProviderImpl(options.Value, lifetime);
     }
     catch (Exception ex)
     {
@@ -63,9 +64,6 @@ public class Program
     logger.Info($"-------------------------------------------");
     logger.Info($"SlowUdpPipe Client Started");
     logger.Info($"Version: {version}");
-    logger.Info($"Remote: {options.Value.Remote}");
-    logger.Info($"Local: {options.Value.Local}");
-    logger.Info($"Cypher: {options.Value.Cipher ?? SettingsProviderImpl.DEFAULT_CYPHER}");
     logger.Info($"OS: {Environment.OSVersion} {(Environment.Is64BitOperatingSystem ? "x64" : "x86")}");
     logger.Info($"-------------------------------------------");
 
@@ -95,21 +93,5 @@ public class Program
       // ignore
     }
   }
-
-}
-
-public class Options
-{
-  [Option("remote", Required = true, HelpText = "Processed data will be sent to this host")]
-  public string? Remote { get; init; }
-
-  [Option("local", Required = true, HelpText = "SlowUdpTunnel will listen this address for incoming data")]
-  public string? Local { get; init; }
-
-  [Option("cipher", Required = false, HelpText = "Cryptographic algorithm used for traffic encryption/decryption (default: aes-gcm-128)")]
-  public string? Cipher { get; init; }
-
-  [Option("key", Required = true, HelpText = "Key used for encryption")]
-  public string? Key { get; init; }
 
 }

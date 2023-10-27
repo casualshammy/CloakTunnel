@@ -1,5 +1,4 @@
-﻿using Ax.Fw;
-using Ax.Fw.Crypto;
+﻿using Ax.Fw.Crypto;
 using Ax.Fw.SharedTypes.Interfaces;
 using JustLogger.Interfaces;
 using SlowUdpPipe.Common.Data;
@@ -10,32 +9,30 @@ namespace SlowUdpPipe.Common.Toolkit;
 
 public static class EncryptionAlgorithmsTest
 {
+  readonly record struct TestResult(EncryptionAlgorithm Algorithm, int WorkVolumeBytes, long? ResultMs);
+
   public static void TestAndPrintInConsole(IReadOnlyLifetime _lifetime, ILogger _logger)
   {
-    _logger.Info($"================ Running benchmark, please wait.. ================");
-    var result = Test(_lifetime, null);
-    var minScore = result.Min(_ => _.Value ?? long.MaxValue);
+    _logger.Warn($"================ Running benchmark, please wait.. ================");
     _logger.Warn($"=========== Performance per algorithm (more is better) ===========");
-    foreach (var (algo, score) in result)
+    foreach (var result in TestInternal(_lifetime, null))
     {
-      if (score == null)
-        _logger.Warn($"Ciphers '{algo}' is not supported on this platform");
-      else if (algo == EncryptionAlgorithm.Xor)
-        _logger.Info($"{algo} (may be detectable): {minScore * 100 / score}");
+      var algoSlug = Consts.ENCRYPTION_ALG_SLUG[result.Algorithm];
+      if (result.ResultMs == null)
+        _logger.Warn($"Algorithm '{algoSlug}' is not supported on this platform");
       else
-        _logger.Info($"{algo}: {minScore * 100 / score}");
+        _logger.Info($"{algoSlug}: {Converters.BytesPerSecondToString(result.WorkVolumeBytes / (result.ResultMs.Value / 1000d))}");
     }
     _logger.Warn($"==================================================================");
   }
 
   public static Dictionary<EncryptionAlgorithm, long?> Test(IReadOnlyLifetime _lifetime, Action<double>? _progress)
   {
-    TestInternal(_lifetime, _p => _progress?.Invoke(_p / 2));
-    var result = TestInternal(_lifetime, _p => _progress?.Invoke(0.5 + _p / 2));
-    return result;
+    return TestInternal(_lifetime, _progress)
+      .ToDictionary(_ => _.Algorithm, _ => _.ResultMs);
   }
 
-  private static Dictionary<EncryptionAlgorithm, long?> TestInternal(IReadOnlyLifetime _lifetime, Action<double>? _progress)
+  private static IEnumerable<TestResult> TestInternal(IReadOnlyLifetime _lifetime, Action<double>? _progress)
   {
     var key = "123456789";
     var algos = new Dictionary<EncryptionAlgorithm, Func<ICryptoAlgorithm>>()
@@ -53,10 +50,12 @@ public static class EncryptionAlgorithmsTest
     var iteration = 0d;
 
     var buffer = new byte[128 * 1024];
+    Random.Shared.NextBytes(buffer);
+    var totalWorkBytes = iterations * buffer.Length;
     var sw = Stopwatch.StartNew();
-    var result = new Dictionary<EncryptionAlgorithm, long?>();
     foreach (var (algorithm, algorithmFactory) in algos)
     {
+      long? result = null;
       try
       {
         var algo = algorithmFactory();
@@ -67,16 +66,14 @@ public static class EncryptionAlgorithmsTest
           algo.Decrypt(encrypted);
           _progress?.Invoke(++iteration / workCount);
         }
-
-        result[algorithm] = sw.ElapsedMilliseconds;
+        result = sw.ElapsedMilliseconds;
       }
       catch
       {
         _progress?.Invoke((iteration + iterations) / workCount);
-        result[algorithm] = null;
       }
-    }
 
-    return result;
+      yield return new TestResult(algorithm, totalWorkBytes, result);
+    }
   }
 }

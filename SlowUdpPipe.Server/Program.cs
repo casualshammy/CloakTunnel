@@ -1,5 +1,4 @@
 ﻿using Ax.Fw;
-using Ax.Fw.Crypto;
 using Ax.Fw.DependencyInjection;
 using Ax.Fw.SharedTypes.Interfaces;
 using CommandLine;
@@ -8,7 +7,7 @@ using JustLogger.Interfaces;
 using SlowUdpPipe.Common.Toolkit;
 using SlowUdpPipe.Interfaces;
 using SlowUdpPipe.Modules.SettingsProvider;
-using System.Diagnostics;
+using SlowUdpPipe.Server.Data;
 using System.Reflection;
 
 namespace SlowUdpPipe;
@@ -31,14 +30,14 @@ public class Program
 
     if (_args?.Length == 1 && _args[0] == "genkey")
     {
-      logger.Warn($"===== Use this key in '--key' argument =====");
+      logger.Warn($"===== Use this key in tunnel's description =====");
       logger.Info(Utilities.GetRandomString(32, false));
-      logger.Warn($"============================================");
+      logger.Warn($"================================================");
       return;
     }
 
     var options = Parser.Default
-      .ParseArguments<Options>(_args);
+      .ParseArguments<CommandLineOptions>(_args);
 
     if (options.Value == null)
       return;
@@ -46,7 +45,7 @@ public class Program
     SettingsProviderImpl settingsProvider;
     try
     {
-      settingsProvider = new SettingsProviderImpl(options.Value);
+      settingsProvider = new SettingsProviderImpl(options.Value, lifetime);
     }
     catch (Exception ex)
     {
@@ -65,9 +64,6 @@ public class Program
     logger.Info($"-------------------------------------------");
     logger.Info($"SlowUdpPipe Server Started");
     logger.Info($"Version: {version}");
-    logger.Info($"Remote: {options.Value.Remote}");
-    logger.Info($"Local: {options.Value.Local}");
-    logger.Info($"Cyphers: {options.Value.Ciphers ?? "all available"}");
     logger.Info($"OS: {Environment.OSVersion} {(Environment.Is64BitOperatingSystem ? "x64" : "x86")}");
     logger.Info($"-------------------------------------------");
 
@@ -97,21 +93,5 @@ public class Program
       // ignore
     }
   }
-
-}
-
-public class Options
-{
-  [Option("remote", Required = true, HelpText = "Processed data will be sent to this host")]
-  public string? Remote { get; init; }
-
-  [Option("local", Required = true, HelpText = "SlowUdpTunnel will listen this address for incoming data")]
-  public string? Local { get; init; }
-
-  [Option("ciphers", Required = false, HelpText = "Cryptographic algorithms used for traffic encryption/decryption (default: all)")]
-  public string? Ciphers { get; init; }
-
-  [Option("key", Required = true, HelpText = "Key used for encryption")]
-  public string? Key { get; init; }
 
 }

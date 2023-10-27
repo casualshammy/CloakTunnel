@@ -39,8 +39,21 @@ public class UdpTunnelClient
     p_stats = _lifetime.ToDisposeOnEnded(new ReplaySubject<UdpTunnelStat>(1));
 
     p_listenSocket = _lifetime.ToDisposeOnEnded(new Socket(p_options.Local.Address.AddressFamily, SocketType.Dgram, ProtocolType.Udp));
-    p_listenSocket.Bind(p_options.Local);
-
+    try
+    {
+      p_listenSocket.Bind(p_options.Local);
+    }
+    catch (SocketException sex) when (sex.SocketErrorCode == SocketError.AddressAlreadyInUse)
+    {
+      p_logger.Error($"Can't bind to address {p_options.Local}: already in use");
+      return;
+    }
+    catch (Exception ex)
+    {
+      p_logger.Error($"Can't bind to address {p_options.Local}: {ex.Message}");
+      return;
+    }
+    
     var listenerThread = new Thread(() => CreateListeningSocketRoutine(_lifetime)) { Priority = ThreadPriority.Highest };
     listenerThread.Start();
 

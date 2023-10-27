@@ -9,6 +9,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <None Remove="local.json" />
 	  <None Remove="_build_ubuntu.bat" />
 	</ItemGroup>
 

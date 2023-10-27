@@ -1,12 +1,8 @@
-﻿using SlowUdpPipe.Common.Data;
-using System.Net;
+﻿using SlowUdpPipe.Server.Data;
 
 namespace SlowUdpPipe.Interfaces;
 
-public interface ISettingsProvider
+internal interface ISettingsProvider
 {
-  IPEndPoint Remote { get; }
-  IPEndPoint Local { get; }
-  string Key { get; }
-  IReadOnlyList<EncryptionAlgorithm> Algorithms { get; }
+  IObservable<IReadOnlyDictionary<string, UdpTunnelServerRawOptions>?> Definitions { get; }
 }
