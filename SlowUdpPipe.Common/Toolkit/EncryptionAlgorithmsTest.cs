@@ -9,13 +9,11 @@ namespace SlowUdpPipe.Common.Toolkit;
 
 public static class EncryptionAlgorithmsTest
 {
-  readonly record struct TestResult(EncryptionAlgorithm Algorithm, int WorkVolumeBytes, long? ResultMs);
-
   public static void TestAndPrintInConsole(IReadOnlyLifetime _lifetime, ILogger _logger)
   {
     _logger.Warn($"================ Running benchmark, please wait.. ================");
     _logger.Warn($"=========== Performance per algorithm (more is better) ===========");
-    foreach (var result in TestInternal(_lifetime, null))
+    foreach (var result in Benchmark(_lifetime, null))
     {
       var algoSlug = Consts.ENCRYPTION_ALG_SLUG[result.Algorithm];
       if (result.ResultMs == null)
@@ -26,13 +24,7 @@ public static class EncryptionAlgorithmsTest
     _logger.Warn($"==================================================================");
   }
 
-  public static Dictionary<EncryptionAlgorithm, long?> Test(IReadOnlyLifetime _lifetime, Action<double>? _progress)
-  {
-    return TestInternal(_lifetime, _progress)
-      .ToDictionary(_ => _.Algorithm, _ => _.ResultMs);
-  }
-
-  private static IEnumerable<TestResult> TestInternal(IReadOnlyLifetime _lifetime, Action<double>? _progress)
+  public static IEnumerable<CryptoBenchmarkResult> Benchmark(IReadOnlyLifetime _lifetime, Action<double>? _progress)
   {
     var key = "123456789";
     var algos = new Dictionary<EncryptionAlgorithm, Func<ICryptoAlgorithm>>()
@@ -73,7 +65,7 @@ public static class EncryptionAlgorithmsTest
         _progress?.Invoke((iteration + iterations) / workCount);
       }
 
-      yield return new TestResult(algorithm, totalWorkBytes, result);
+      yield return new CryptoBenchmarkResult(algorithm, totalWorkBytes, result);
     }
   }
 }

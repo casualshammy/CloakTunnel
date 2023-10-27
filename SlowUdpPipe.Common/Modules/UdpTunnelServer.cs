@@ -148,7 +148,7 @@ public class UdpTunnelServer
           client.Socket.SendTo(dataToSend, SocketFlags.None, remoteEndpoint);
         }
       }
-      catch (SocketException sex0) when (sex0.ErrorCode == 10004) // Interrupted function call
+      catch (SocketException sex0) when (sex0.ErrorCode == 10004 || sex0.ErrorCode == 4) // Interrupted function call
       {
         // ignore (caused be client cleanup)
       }

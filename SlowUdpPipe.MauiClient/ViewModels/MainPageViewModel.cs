@@ -65,10 +65,10 @@ internal class MainPageViewModel : BaseViewModel
     get => p_localAddress;
     set => p_preferences.SetValue(PREF_DB_LOCAL, value);
   }
-  public EncryptionAlgorithm Cipher
+  public string Cipher
   {
-    get => p_cipher;
-    set => p_preferences.SetValue(PREF_DB_CIPHER, value);
+    get => Consts.ENCRYPTION_ALG_SLUG[p_cipher];
+    set => p_preferences.SetValue(PREF_DB_CIPHER, Consts.ENCRYPTION_ALG_SLUG_REVERSE[value]);
   }
   public string? Key
   {
@@ -85,7 +85,7 @@ internal class MainPageViewModel : BaseViewModel
     get => p_startStopBtnColor ?? COLOR_UP_TUNNEL_OFF;
     set => SetProperty(ref p_startStopBtnColor, value, nameof(StartStopBtnColor));
   }
-  
+
   public ICommand RemoteAddressCommand { get; }
   public ICommand LocalAddressCommand { get; }
   public ICommand CipherCommand { get; }
@@ -148,21 +148,11 @@ internal class MainPageViewModel : BaseViewModel
     if (currentPage == null)
       return;
 
-    var options = new Dictionary<string, EncryptionAlgorithm>
-    {
-      { "aes-128", EncryptionAlgorithm.Aes128 },
-      { "aes-256", EncryptionAlgorithm.Aes256 },
-      { "aes-gcm-128", EncryptionAlgorithm.AesGcm128 },
-      { "aes-gcm-256", EncryptionAlgorithm.AesGcm256 },
-      { "chacha20-poly1305", EncryptionAlgorithm.ChaCha20Poly1305 },
-      { "xor (may be detectable)", EncryptionAlgorithm.Xor }
-    };
-
-    var result = await currentPage.DisplayActionSheet("Please select cypher", null, null, options.Keys.ToArray());
+    var result = await currentPage.DisplayActionSheet("Please select cypher", null, null, Consts.ENCRYPTION_ALG_SLUG_REVERSE.Keys.ToArray());
     if (result == null)
       return;
 
-    Cipher = options[result];
+    Cipher = result;
   }
 
   private async void OnKey(object _arg)

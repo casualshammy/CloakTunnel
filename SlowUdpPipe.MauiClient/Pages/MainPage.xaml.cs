@@ -3,6 +3,7 @@ using Android.OS;
 using Ax.Fw.Extensions;
 using Ax.Fw.SharedTypes.Interfaces;
 using JustLogger.Interfaces;
+using SlowUdpPipe.Common.Data;
 using SlowUdpPipe.Common.Toolkit;
 using SlowUdpPipe.MauiClient.Interfaces;
 using SlowUdpPipe.MauiClient.Toolkit;
@@ -134,25 +135,18 @@ public partial class MainPage : CContentPage
         if (btn == null)
           return;
 
-        MainThread.BeginInvokeOnMainThread(() =>
-        {
-          btn.Text = $"Benchmarking ({_progress * 100:F0}%)";
-        });
+        MainThread.BeginInvokeOnMainThread(() => btn.Text = $"Benchmarking ({_progress * 100:F0}%)");
       }
 
-      var result = await Task.Run(() => EncryptionAlgorithmsTest.Test(lifetime, updateProgress));
-
-
-      var minScore = result.Min(_ => _.Value ?? long.MaxValue);
+      var results = await Task.Run(() => EncryptionAlgorithmsTest.Benchmark(lifetime, updateProgress).ToArray());
       var message = "More is better\n\n";
-      foreach (var (algo, score) in result)
+      foreach (var result in results)
       {
-        if (score == null)
-          message += $"Cipher '{algo}' is not supported on this platform\n";
-        else if (algo == Common.Data.EncryptionAlgorithm.Xor)
-          message += $"{algo} (may be detectable): {minScore * 100 / score}\n";
+        var algoSlug = Consts.ENCRYPTION_ALG_SLUG[result.Algorithm];
+        if (result.ResultMs == null)
+          message += $"Cipher '{algoSlug}' is not supported on this platform\n";
         else
-          message += $"{algo}: {minScore * 100 / score}\n";
+          message += $"{algoSlug}: {Converters.BytesPerSecondToString(result.WorkVolumeBytes / (result.ResultMs.Value / 1000d))}\n";
       }
 
       await DisplayAlert("Benchmark results", message, "Close");
