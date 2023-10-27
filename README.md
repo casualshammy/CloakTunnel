@@ -22,11 +22,11 @@ Key is used to encrypt data. Key **must be the same** on `client` and `server`. 
 2. Create file `config.json` with following content:
 ```json
 {
-	"wireguard": {
-		"remote": "127.0.0.1:51820",
-		"local": "0.0.0.0:1935",
-		"key": "<generated-key-from-[1]>"
-	}
+  "wireguard": {
+    "remote": "127.0.0.1:51820",
+    "local": "0.0.0.0:1935",
+    "key": "<generated-key-from-[1]>"
+  }
 }
 ```
 3. Run `slowudppipeserver -c config.json`;
@@ -38,11 +38,11 @@ Key is used to encrypt data. Key **must be the same** on `client` and `server`. 
 7. Create file `config.json` with following content:
 ```json
 {
-	"wireguard": {
-		"remote": "<server-ip>:1935",
-		"local": "127.0.0.1:52280",
-		"key": "<generated-key-from-[1]>"
-	}
+  "wireguard": {
+    "remote": "<server-ip>:1935",
+    "local": "127.0.0.1:52280",
+    "key": "<generated-key-from-[1]>"
+  }
 }
 ```
 8. Run `slowudppipeclient -c config.json`
@@ -56,23 +56,35 @@ SlowUdpPipe use config files to describe endpoints. You can add `rules` as you w
 ### Server config file format
 ```json
 {
-	"<rule-name (any)>": {
-		"remote": "<address of service awaiting for unencrypted traffic (WireGuard, OpenVPN, etc)>",
-		"local": "<SlowUdpPipe will listen to this address>",
-		"key": "<key for encryption/decryption>"
-		"ciphers": ["<optional array of accepted ciphers, see details below>"]
-	}
+  "<rule-name (any)>": {
+    "remote": "<address of service awaiting for unencrypted traffic (WireGuard, OpenVPN, etc)>",
+    "local": "<SlowUdpPipe will listen to this address>",
+    "key": "<key for encryption/decryption>"
+    "ciphers": ["<optional array of accepted ciphers, see details below>"]
+  },
+  "<another-rule>": {
+    "remote": "<address of service awaiting for unencrypted traffic (WireGuard, OpenVPN, etc)>",
+    "local": "<SlowUdpPipe will listen to this address>",
+    "key": "<key for encryption/decryption>"
+    "ciphers": ["<optional array of accepted ciphers, see details below>"]
+  }
 }
 ```
 ### Client config file format
 ```json
 {
-	"<rule-name (any)>": {
-		"remote": "<address of SlowUdpPipe server>",
-		"local": "<SlowUdpPipe will listen to this address for traffic (WireGuard, OpenVPN, etc)>",
-		"key": "<key for encryption/decryption>"
-		"cipher": "<optional name of cipher, see details below>"
-	}
+  "<rule-name (any)>": {
+    "remote": "<address of SlowUdpPipe server>",
+    "local": "<SlowUdpPipe will listen to this address for traffic (WireGuard, OpenVPN, etc)>",
+    "key": "<key for encryption/decryption>"
+    "cipher": "<optional name of cipher, see details below>"
+  },
+  "<another-rule>": {
+    "remote": "<address of service awaiting for unencrypted traffic (WireGuard, OpenVPN, etc)>",
+    "local": "<SlowUdpPipe will listen to this address>",
+    "key": "<key for encryption/decryption>"
+    "ciphers": ["<optional array of accepted ciphers, see details below>"]
+  }
 }
 ```
 
