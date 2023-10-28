@@ -9,7 +9,10 @@ SlowUdpPipe is an application for creating an encrypted UDP tunnel between two c
  - [x] Linux (`x86`, `x64`, `arm`, `arm64`)
  - [x] Android (only client)
 
-There are [releases](https://github.com/casualshammy/slow-udp-pipe/releases) for `windows`, `linux` and `android 9+`. 
+There are [releases](https://github.com/casualshammy/slow-udp-pipe/releases) for `windows`, `linux` and `android 9+`; also SlowUdpPipe is available as open beta in Google Play:
+<a href="https://play.google.com/store/apps/details?id=com.axiolab.slowudppipe">
+  <img alt="Google Play open beta" width="200px" src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" />
+</a>
 
 ## Ciphers
 SlowUdpPipe supports the following ciphers: `aes-128`, `aes-256`, `aes-gcm-128`, `aes-gcm-256`, `chacha20-poly1305` and `xor`. They all are safe (except `xor`, but `xor` is extremely fast and usually enough for obfuscating traffic). Some cyphers are not available on all platforms, please use `test` command to get additional info. 
