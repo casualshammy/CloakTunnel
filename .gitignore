@@ -13,3 +13,5 @@
 /SlowUdpPipe.Client/SlowUdpPipe.Client.csproj.user
 /SlowUdpPipe.Client/local.json
 /SlowUdpPipe.Server/local.json
+/SlowUdpPipe.Client/_ws-test.json
+/SlowUdpPipe.Server/_ws-test.json

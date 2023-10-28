@@ -1,7 +1,6 @@
 ﻿using Ax.Fw.Crypto;
 using Ax.Fw.Extensions;
 using Ax.Fw.SharedTypes.Interfaces;
-using Grace.DependencyInjection;
 using JustLogger.Interfaces;
 using SlowUdpPipe.Common.Data;
 using System.Collections.Concurrent;
@@ -24,7 +23,6 @@ public class UdpTunnelServer
   private readonly UdpTunnelServerOptions p_options;
   private readonly IReadOnlyLifetime p_lifetime;
   private readonly ILogger p_logger;
-  private readonly Socket p_listenSocket;
   private readonly ConcurrentDictionary<EndPoint, ClientInfo> p_clients = new();
   private readonly ReplaySubject<UdpTunnelStat> p_stats;
   private readonly Subject<EndPoint> p_clientUnknownEncryptionSubj;
@@ -44,10 +42,10 @@ public class UdpTunnelServer
     p_stats = _lifetime.ToDisposeOnEnded(new ReplaySubject<UdpTunnelStat>(1));
     p_clientUnknownEncryptionSubj = _lifetime.ToDisposeOnEnded(new Subject<EndPoint>());
 
-    p_listenSocket = _lifetime.ToDisposeOnEnded(new Socket(p_options.Local.Address.AddressFamily, SocketType.Dgram, ProtocolType.Udp));
+    var remoteClientsSocket = _lifetime.ToDisposeOnEnded(new Socket(p_options.Local.Address.AddressFamily, SocketType.Dgram, ProtocolType.Udp));
     try
     {
-      p_listenSocket.Bind(p_options.Local);
+      remoteClientsSocket.Bind(p_options.Local);
     }
     catch (SocketException sex) when (sex.SocketErrorCode == SocketError.AddressAlreadyInUse)
     {
@@ -60,8 +58,8 @@ public class UdpTunnelServer
       return;
     }
 
-    var listenerThread = new Thread(() => CreateListeningSocketRoutine(_lifetime)) { Priority = ThreadPriority.Highest };
-    listenerThread.Start();
+    var remoteClientsRoutineThread = new Thread(() => CreateRemoteClientsRoutineRoutine(remoteClientsSocket, _lifetime)) { Priority = ThreadPriority.Highest };
+    remoteClientsRoutineThread.Start();
 
     Observable
       .Interval(TimeSpan.FromSeconds(1))
@@ -112,35 +110,37 @@ public class UdpTunnelServer
 
   public IObservable<UdpTunnelStat> Stats => p_stats;
 
-  private void CreateListeningSocketRoutine(IReadOnlyLifetime _lifetime)
+  private void CreateRemoteClientsRoutineRoutine(
+    Socket _remoteClientsSocket,
+    IReadOnlyLifetime _lifetime)
   {
     Span<byte> buffer = new byte[128 * 1024];
-    EndPoint clientEndpoint = new IPEndPoint(IPAddress.Any, short.MaxValue);
+    EndPoint remoteClientEndpoint = new IPEndPoint(IPAddress.Any, short.MaxValue);
     var remoteEndpoint = p_options.Remote;
 
-    p_logger.Info($"Listening socket routine is started");
+    p_logger.Info($"Remote clients socket routine is started");
 
     while (!_lifetime.IsCancellationRequested)
     {
       try
       {
-        var receivedBytes = p_listenSocket.ReceiveFrom(buffer, SocketFlags.None, ref clientEndpoint);
+        var receivedBytes = _remoteClientsSocket.ReceiveFrom(buffer, SocketFlags.None, ref remoteClientEndpoint);
         if (receivedBytes > 0)
         {
           Interlocked.Add(ref p_byteRecvCount, (ulong)receivedBytes);
           var receivedSpan = buffer.Slice(0, receivedBytes);
 
-          if (!p_clients.TryGetValue(clientEndpoint, out var client))
+          if (!p_clients.TryGetValue(remoteClientEndpoint, out var client))
           {
-            var newClient = AllocateNewClient(p_listenSocket, clientEndpoint, receivedSpan, out var alg);
+            var newClient = AllocateNewClient(_remoteClientsSocket, remoteClientEndpoint, receivedSpan, out var alg);
             if (newClient == null)
             {
-              p_clientUnknownEncryptionSubj.OnNext(clientEndpoint);
+              p_clientUnknownEncryptionSubj.OnNext(remoteClientEndpoint);
               continue;
             }
 
-            p_clients.TryAdd(clientEndpoint, client = newClient);
-            p_logger.Info($"[{clientEndpoint}] Client connected (alg: {alg}); total clients: {p_clients.Count}");
+            p_clients.TryAdd(remoteClientEndpoint, client = newClient);
+            p_logger.Info($"[{remoteClientEndpoint}] Client connected (alg: {alg}); total clients: {p_clients.Count}");
           }
 
           var dataToSend = client.Decryptor.Decrypt(receivedSpan);
@@ -166,13 +166,13 @@ public class UdpTunnelServer
       }
     }
 
-    p_logger.Info($"Listening socket routine is ended");
+    p_logger.Info($"Remote clients socket routine is ended");
   }
 
-  private void CreateSendSocketRoutine(
-    Socket _sendSocket,
-    Socket _listenSocket,
-    EndPoint _clientEndPoint,
+  private void CreateLocalServiceRoutine(
+    Socket _localServiceSocket,
+    Socket _remoteClientsSocket,
+    EndPoint _remoteClientEndpoint,
     EncryptionAlgorithm _algorithm,
     IReadOnlyLifetime _lifetime)
   {
@@ -180,23 +180,23 @@ public class UdpTunnelServer
     EndPoint localServiceEndpoint = new IPEndPoint(IPAddress.Any, short.MaxValue);
     var encryptor = GetCrypto(_lifetime, _algorithm);
 
-    p_logger.Info($"[{_clientEndPoint}] Socket routine is started");
+    p_logger.Info($"[{_remoteClientEndpoint}] Local service socket routine is started");
 
     while (!_lifetime.IsCancellationRequested)
     {
       try
       {
-        if (!_sendSocket.IsBound)
+        if (!_localServiceSocket.IsBound)
         {
           Thread.Sleep(100);
           continue;
         }
 
-        var receivedBytes = _sendSocket.ReceiveFrom(buffer, SocketFlags.None, ref localServiceEndpoint);
+        var receivedBytes = _localServiceSocket.ReceiveFrom(buffer, SocketFlags.None, ref localServiceEndpoint);
         if (receivedBytes > 0)
         {
           var dataToSend = encryptor.Encrypt(buffer.Slice(0, receivedBytes));
-          _listenSocket.SendTo(dataToSend, SocketFlags.None, _clientEndPoint);
+          _remoteClientsSocket.SendTo(dataToSend, SocketFlags.None, _remoteClientEndpoint);
           Interlocked.Add(ref p_byteSentCount, (ulong)dataToSend.Length);
         }
       }
@@ -214,16 +214,19 @@ public class UdpTunnelServer
       }
     }
 
-    p_logger.Info($"[{_clientEndPoint}] Socket routine is ended");
+    p_logger.Info($"[{_remoteClientEndpoint}] Local service socket routine is ended");
   }
 
-  private ClientInfo? AllocateNewClient(Socket _listenSocket, EndPoint _clientEndpoint, Span<byte> _firstChunk, out EncryptionAlgorithm _encryptionAlgorithm)
+  private ClientInfo? AllocateNewClient(
+    Socket _remoteClientsSocket, 
+    EndPoint _remoteClientEndpoint, 
+    Span<byte> _firstChunk, 
+    out EncryptionAlgorithm _encryptionAlgorithm)
   {
     var lifetime = p_lifetime.GetChildLifetime();
     if (lifetime != null)
     {
-      EncryptionAlgorithm? alg;
-      if (!TryGuessEncryptionAlgorithm(_firstChunk, out alg))
+      if (!TryGuessEncryptionAlgorithm(_firstChunk, out EncryptionAlgorithm? alg))
       {
         _encryptionAlgorithm = EncryptionAlgorithm.None;
         return null;
@@ -231,18 +234,18 @@ public class UdpTunnelServer
 
       var decryptor = GetCrypto(lifetime, alg.Value);
 
-      var sendSocket = lifetime.ToDisposeOnEnding(new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp));
-      var thread = new Thread(() => CreateSendSocketRoutine(
-                   sendSocket,
-                   _listenSocket,
-                   _clientEndpoint,
+      var localServiceSocket = lifetime.ToDisposeOnEnding(new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp));
+      var thread = new Thread(() => CreateLocalServiceRoutine(
+                   localServiceSocket,
+                   _remoteClientsSocket,
+                   _remoteClientEndpoint,
                    alg.Value,
                    lifetime))
       { Priority = ThreadPriority.Highest };
       thread.Start();
 
       _encryptionAlgorithm = alg.Value;
-      return new(sendSocket, lifetime, decryptor) { Timestamp = Environment.TickCount64 };
+      return new(localServiceSocket, lifetime, decryptor) { Timestamp = Environment.TickCount64 };
     }
 
     throw new OperationCanceledException();

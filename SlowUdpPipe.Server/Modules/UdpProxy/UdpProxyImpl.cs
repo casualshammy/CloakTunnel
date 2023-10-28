@@ -45,7 +45,6 @@ internal class UdpProxyImpl
             .Select(_ => Consts.ENCRYPTION_ALG_SLUG[_])
             .OrderBy(_ => _);
 
-
           logger.Warn($"Launching udp tunnel L:{opt.Local} > R:{opt.Remote}; algorithms: ({string.Join(", ", algosEE)})...");
           _ = new UdpTunnelServer(opt, _life, logger);
         }

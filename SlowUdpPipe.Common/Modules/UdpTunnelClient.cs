@@ -22,7 +22,6 @@ public class UdpTunnelClient
   private readonly UdpTunnelClientOptions p_options;
   private readonly IReadOnlyLifetime p_lifetime;
   private readonly ILogger p_logger;
-  private readonly Socket p_listenSocket;
   private readonly ConcurrentDictionary<EndPoint, ClientInfo> p_clients = new();
   private readonly ReplaySubject<UdpTunnelStat> p_stats;
   private ulong p_byteRecvCount;
@@ -38,10 +37,10 @@ public class UdpTunnelClient
     p_logger = _logger;
     p_stats = _lifetime.ToDisposeOnEnded(new ReplaySubject<UdpTunnelStat>(1));
 
-    p_listenSocket = _lifetime.ToDisposeOnEnded(new Socket(p_options.Local.Address.AddressFamily, SocketType.Dgram, ProtocolType.Udp));
+    var localServiceSocket = _lifetime.ToDisposeOnEnded(new Socket(p_options.Local.Address.AddressFamily, SocketType.Dgram, ProtocolType.Udp));
     try
     {
-      p_listenSocket.Bind(p_options.Local);
+      localServiceSocket.Bind(p_options.Local);
     }
     catch (SocketException sex) when (sex.SocketErrorCode == SocketError.AddressAlreadyInUse)
     {
@@ -54,8 +53,8 @@ public class UdpTunnelClient
       return;
     }
     
-    var listenerThread = new Thread(() => CreateListeningSocketRoutine(_lifetime)) { Priority = ThreadPriority.Highest };
-    listenerThread.Start();
+    var localServiceSocketRoutineThread = new Thread(() => CreateLocalServiceRoutine(localServiceSocket, _lifetime)) { Priority = ThreadPriority.Highest };
+    localServiceSocketRoutineThread.Start();
 
     Observable
       .Interval(TimeSpan.FromSeconds(1))
@@ -95,28 +94,30 @@ public class UdpTunnelClient
 
   public IObservable<UdpTunnelStat> Stats => p_stats;
 
-  private void CreateListeningSocketRoutine(IReadOnlyLifetime _lifetime)
+  private void CreateLocalServiceRoutine(
+    Socket _localServiceSocket,
+    IReadOnlyLifetime _lifetime)
   {
     Span<byte> buffer = new byte[128 * 1024];
-    EndPoint localEndpoint = new IPEndPoint(IPAddress.Any, short.MaxValue);
+    EndPoint localServiceEndpoint = new IPEndPoint(IPAddress.Any, short.MaxValue);
     var remoteEndPoint = p_options.Remote;
     var cryptor = GetCrypto(_lifetime);
 
-    p_logger.Info($"Listening socket routine is started");
+    p_logger.Info($"Local service socket routine is started");
 
     while (!_lifetime.IsCancellationRequested)
     {
       try
       {
-        var receivedBytes = p_listenSocket.ReceiveFrom(buffer, SocketFlags.None, ref localEndpoint);
+        var receivedBytes = _localServiceSocket.ReceiveFrom(buffer, SocketFlags.None, ref localServiceEndpoint);
         if (receivedBytes > 0)
         {
           var dataToSend = cryptor.Encrypt(buffer.Slice(0, receivedBytes));
 
-          if (!p_clients.TryGetValue(localEndpoint, out var client))
+          if (!p_clients.TryGetValue(localServiceEndpoint, out var client))
           {
-            p_clients.TryAdd(localEndpoint, client = AllocateNewClient(p_listenSocket, localEndpoint));
-            p_logger.Info($"[{localEndpoint}] Client connected; total clients: {p_clients.Count}");
+            p_clients.TryAdd(localServiceEndpoint, client = AllocateNewClient(_localServiceSocket, localServiceEndpoint));
+            p_logger.Info($"[{localServiceEndpoint}] Client connected; total clients: {p_clients.Count}");
           }
 
           client.Timestamp = Environment.TickCount64;
@@ -142,37 +143,37 @@ public class UdpTunnelClient
       }
     }
 
-    p_logger.Info($"Listening socket routine is ended");
+    p_logger.Info($"Local service socket routine is ended");
   }
 
-  private void CreateSendSocketRoutine(
-    Socket _sendSocket,
-    Socket _listenSocket,
-    EndPoint _localEndpoint,
+  private void CreateRemoteServerRoutine(
+    Socket _remoteServerSocket,
+    Socket _localServiceSocket,
+    EndPoint _localServiceEndpoint,
     IReadOnlyLifetime _lifetime)
   {
     Span<byte> buffer = new byte[128 * 1024];
-    EndPoint clientEndpoint = new IPEndPoint(IPAddress.Any, short.MaxValue);
+    EndPoint _ = new IPEndPoint(IPAddress.Any, short.MaxValue);
     var cryptor = GetCrypto(_lifetime);
 
-    p_logger.Info($"[{_localEndpoint}] Socket routine is started");
+    p_logger.Info($"[{_localServiceEndpoint}] Remote server socket routine is started");
 
     while (!_lifetime.IsCancellationRequested)
     {
       try
       {
-        if (!_sendSocket.IsBound)
+        if (!_remoteServerSocket.IsBound)
         {
           Thread.Sleep(100);
           continue;
         }
 
-        var receivedBytes = _sendSocket.ReceiveFrom(buffer, SocketFlags.None, ref clientEndpoint);
+        var receivedBytes = _remoteServerSocket.ReceiveFrom(buffer, SocketFlags.None, ref _);
         if (receivedBytes > 0)
         {
           Interlocked.Add(ref p_byteRecvCount, (ulong)receivedBytes);
           var dataToSend = cryptor.Decrypt(buffer.Slice(0, receivedBytes));
-          _listenSocket.SendTo(dataToSend, SocketFlags.None, _localEndpoint);
+          _localServiceSocket.SendTo(dataToSend, SocketFlags.None, _localServiceEndpoint);
         }
       }
       catch (SocketException sex0) when (sex0.ErrorCode == 10004) // Interrupted function call
@@ -189,24 +190,26 @@ public class UdpTunnelClient
       }
     }
 
-    p_logger.Info($"[{_localEndpoint}] Socket routine is ended");
+    p_logger.Info($"[{_localServiceEndpoint}] Remote server socket routine is ended");
   }
 
-  private ClientInfo AllocateNewClient(Socket _listenSocket, EndPoint _localEndpoint)
+  private ClientInfo AllocateNewClient(
+    Socket _localServiceSocket, 
+    EndPoint _localServiceEndpoint)
   {
     var lifetime = p_lifetime.GetChildLifetime();
     if (lifetime != null)
     {
-      var sendSocket = lifetime.ToDisposeOnEnding(new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp));
-      var thread = new Thread(() => CreateSendSocketRoutine(
-                   sendSocket,
-                   _listenSocket,
-                   _localEndpoint,
+      var remoteServerSocket = lifetime.ToDisposeOnEnding(new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp));
+      var thread = new Thread(() => CreateRemoteServerRoutine(
+                   remoteServerSocket,
+                   _localServiceSocket,
+                   _localServiceEndpoint,
                    lifetime))
       { Priority = ThreadPriority.Highest };
       thread.Start();
 
-      return new(sendSocket, lifetime) { Timestamp = Environment.TickCount64 };
+      return new(remoteServerSocket, lifetime) { Timestamp = Environment.TickCount64 };
     }
 
     throw new OperationCanceledException();
