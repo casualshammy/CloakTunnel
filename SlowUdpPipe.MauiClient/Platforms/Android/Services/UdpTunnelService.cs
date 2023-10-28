@@ -21,9 +21,16 @@ public class UdpTunnelService : CAndroidService, IUdpTunnelService
   private const string NOTIFICATION_CHANNEL = "ServiceChannel";
   private const int NOTIFICATION_ID = 100;
   private const int REQUEST_POST_NOTIFICATIONS = 1000;
+  private readonly NotificationManager p_notificationManager;
   private ILifetime? p_lifetime;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+  public UdpTunnelService()
+  {
+    var context = global::Android.App.Application.Context;
+    p_notificationManager = (NotificationManager)context.GetSystemService(NotificationService)!;
+  }
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
   [Import]
   public IReadOnlyLifetime Lifetime { get; init; }
@@ -33,8 +40,6 @@ public class UdpTunnelService : CAndroidService, IUdpTunnelService
 
   [Import]
   public IUdpTunnelCtrl UdpTunnelCtrl { get; init; }
-
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
   public override IBinder OnBind(Intent? _intent) => throw new NotImplementedException();
 
@@ -111,7 +116,6 @@ public class UdpTunnelService : CAndroidService, IUdpTunnelService
   private Notification CreateNotification(string _title, string _text)
   {
     var context = global::Android.App.Application.Context;
-    var manager = (NotificationManager)context.GetSystemService(NotificationService)!;
     var openAppIntent = PendingIntent.GetActivity(context, 0, Platform.CurrentActivity?.Intent, PendingIntentFlags.Immutable);
 
     var stopIntent = new Intent(context, Class);
@@ -123,16 +127,20 @@ public class UdpTunnelService : CAndroidService, IUdpTunnelService
       ActivityCompat.RequestPermissions(Platform.CurrentActivity, new[] { "android.permission.POST_NOTIFICATIONS" }, REQUEST_POST_NOTIFICATIONS);
 
     var channel = new NotificationChannel(NOTIFICATION_CHANNEL, "Notify when tunnel is active", NotificationImportance.Low);
-    manager.CreateNotificationChannel(channel);
+    channel.SetShowBadge(false);
+    p_notificationManager.CreateNotificationChannel(channel);
 
     var builder = new Notification.Builder(this, NOTIFICATION_CHANNEL)
-     .SetContentTitle(_title)
-     .SetContentText(_text)
      .SetContentIntent(openAppIntent)
      .SetSmallIcon(Resource.Drawable.infinity)
      .SetOnlyAlertOnce(true)
      .SetOngoing(true)
-     .SetActions(stopServiceAction);
+     .SetActions(stopServiceAction)
+     .SetStyle(new Notification
+                .BigTextStyle()?
+                //.BigText("Some Big Text")
+                .SetBigContentTitle(_text)?
+                .SetSummaryText(_title));
 
     if (Build.VERSION.SdkInt >= BuildVersionCodes.S)
 #pragma warning disable CA1416 // Validate platform compatibility
@@ -140,7 +148,7 @@ public class UdpTunnelService : CAndroidService, IUdpTunnelService
 #pragma warning restore CA1416 // Validate platform compatibility
 
     var notification = builder.Build();
-    manager.Notify(NOTIFICATION_ID, notification);
+    p_notificationManager.Notify(NOTIFICATION_ID, notification);
 
     return notification;
   }
@@ -148,12 +156,6 @@ public class UdpTunnelService : CAndroidService, IUdpTunnelService
   private void UpdateNotificationText(string _title, string _text, CancellationToken _ct)
   {
     var context = global::Android.App.Application.Context;
-    if (context.GetSystemService(NotificationService) is not NotificationManager manager)
-    {
-      Log.Error($"Cannot get the instance of {nameof(NotificationManager)}");
-      return;
-    }
-
     var openAppIntent = PendingIntent.GetActivity(context, 0, Platform.CurrentActivity?.Intent, PendingIntentFlags.Immutable);
 
     var stopIntent = new Intent(context, Class);
@@ -162,20 +164,21 @@ public class UdpTunnelService : CAndroidService, IUdpTunnelService
     var stopServiceAction = new[] { new Notification.Action(Resource.Drawable.infinity, "Stop", stopServiceIntent) };
 
     var builder = new Notification.Builder(this, NOTIFICATION_CHANNEL)
-     .SetContentTitle(_title)
-     .SetContentText(_text)
      .SetContentIntent(openAppIntent)
      .SetSmallIcon(Resource.Drawable.infinity)
      .SetOnlyAlertOnce(true)
      .SetOngoing(true)
      .SetActions(stopServiceAction)
-     .SetShowWhen(true)
-     .SetWhen(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+     .SetStyle(new Notification
+                .BigTextStyle()?
+                //.BigText("Some Big Text")
+                .SetBigContentTitle(_text)?
+                .SetSummaryText(_title));
 
     var notification = builder.Build();
 
     if (!_ct.IsCancellationRequested)
-      manager.Notify(NOTIFICATION_ID, notification);
+      p_notificationManager.Notify(NOTIFICATION_ID, notification);
   }
 
 }
