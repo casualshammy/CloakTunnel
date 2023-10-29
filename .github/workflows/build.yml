@@ -66,5 +66,5 @@ jobs:
         serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
         packageName: com.axiolab.slowudppipe
         releaseFiles: artifacts/*.aab
-        track: internal
+        track: beta
         whatsNewDirectory: SlowUdpPipe.MauiClient/whats-new
