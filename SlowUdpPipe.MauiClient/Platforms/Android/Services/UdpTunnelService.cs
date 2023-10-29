@@ -1,7 +1,9 @@
-﻿using Android.App;
+﻿using Android;
+using Android.App;
 using Android.Content;
 using Android.OS;
 using Android.Runtime;
+using Android.Widget;
 using AndroidX.Core.App;
 using Ax.Fw.Attributes;
 using Ax.Fw.Extensions;
@@ -55,7 +57,8 @@ public class UdpTunnelService : CAndroidService, IUdpTunnelService
       if (p_lifetime == null)
         return StartCommandResult.NotSticky;
 
-      var notification = CreateNotification("Udp tunnel is up", "No data transmitted yet");
+      var notification = GetNotification("Udp tunnel is up", "No data transmitted yet", true, p_lifetime.Token);
+
       if (Build.VERSION.SdkInt >= BuildVersionCodes.Q)
 #pragma warning disable CA1416 // Validate platform compatibility
         StartForeground(NOTIFICATION_ID, notification, global::Android.Content.PM.ForegroundService.TypeDataSync);
@@ -74,7 +77,7 @@ public class UdpTunnelService : CAndroidService, IUdpTunnelService
           var avgTx = _list.Average(_ => (long)_.TxBytePerSecond);
 
           var text = $"Rx: {Converters.BytesPerSecondToString(avgRx)}; Tx: {Converters.BytesPerSecondToString(avgTx)}";
-          UpdateNotificationText($"Udp tunnel is up", text, p_lifetime.Token);
+          GetNotification($"Udp tunnel is up", text, false, p_lifetime.Token);
         }, p_lifetime);
 
       p_lifetime.DoOnEnding(() =>
@@ -113,72 +116,55 @@ public class UdpTunnelService : CAndroidService, IUdpTunnelService
     context.StartService(intent);
   }
 
-  private Notification CreateNotification(string _title, string _text)
+  private Notification GetNotification(string _title, string _text, bool _firstShow, CancellationToken _ct)
   {
-    var context = global::Android.App.Application.Context;
-    var openAppIntent = PendingIntent.GetActivity(context, 0, Platform.CurrentActivity?.Intent, PendingIntentFlags.Immutable);
-
-    var stopIntent = new Intent(context, Class);
-    stopIntent.SetAction("STOP_SERVICE_INFORM_TUNNEL_CTRL");
-    var stopServiceIntent = PendingIntent.GetService(context, 0, stopIntent, PendingIntentFlags.Immutable);
-    var stopServiceAction = new[] { new Notification.Action(Resource.Drawable.infinity, "Stop", stopServiceIntent) };
-
-    if (Build.VERSION.SdkInt > BuildVersionCodes.SV2 && Platform.CurrentActivity != null)
+    if (_firstShow && Build.VERSION.SdkInt > BuildVersionCodes.SV2 && Platform.CurrentActivity != null)
       ActivityCompat.RequestPermissions(Platform.CurrentActivity, new[] { "android.permission.POST_NOTIFICATIONS" }, REQUEST_POST_NOTIFICATIONS);
 
-    var channel = new NotificationChannel(NOTIFICATION_CHANNEL, "Notify when tunnel is active", NotificationImportance.Low);
-    channel.SetShowBadge(false);
-    p_notificationManager.CreateNotificationChannel(channel);
+    if (_firstShow)
+    {
+      var channel = new NotificationChannel(NOTIFICATION_CHANNEL, "Notify when tunnel is active", NotificationImportance.Min);
+      channel.SetShowBadge(false);
+      p_notificationManager.CreateNotificationChannel(channel);
+    }
 
-    var builder = new Notification.Builder(this, NOTIFICATION_CHANNEL)
-     .SetContentIntent(openAppIntent)
-     .SetSmallIcon(Resource.Drawable.infinity)
-     .SetOnlyAlertOnce(true)
-     .SetOngoing(true)
-     .SetActions(stopServiceAction)
-     .SetStyle(new Notification
-                .BigTextStyle()?
-                //.BigText("Some Big Text")
-                .SetBigContentTitle(_text)?
-                .SetSummaryText(_title));
-
-    if (Build.VERSION.SdkInt >= BuildVersionCodes.S)
-#pragma warning disable CA1416 // Validate platform compatibility
-      builder = builder.SetForegroundServiceBehavior(1); // FOREGROUND_SERVICE_IMMEDIATE
-#pragma warning restore CA1416 // Validate platform compatibility
-
-    var notification = builder.Build();
-    p_notificationManager.Notify(NOTIFICATION_ID, notification);
-
-    return notification;
-  }
-
-  private void UpdateNotificationText(string _title, string _text, CancellationToken _ct)
-  {
     var context = global::Android.App.Application.Context;
     var openAppIntent = PendingIntent.GetActivity(context, 0, Platform.CurrentActivity?.Intent, PendingIntentFlags.Immutable);
 
     var stopIntent = new Intent(context, Class);
     stopIntent.SetAction("STOP_SERVICE_INFORM_TUNNEL_CTRL");
     var stopServiceIntent = PendingIntent.GetService(context, 0, stopIntent, PendingIntentFlags.Immutable);
-    var stopServiceAction = new[] { new Notification.Action(Resource.Drawable.infinity, "Stop", stopServiceIntent) };
+    var actions = new[] { new Notification.Action(Resource.Drawable.infinity, "Stop", stopServiceIntent) };
+
+    var layoutSmall = new RemoteViews(context.PackageName, Resource.Layout.notification_small);
+    layoutSmall.SetTextViewText(Resource.Id.notification_small_title, _title);
+
+    var layoutLarge = new RemoteViews(context.PackageName, Resource.Layout.notification_large);
+    layoutLarge.SetTextViewText(Resource.Id.notification_large_title, _title);
+    layoutLarge.SetTextViewText(Resource.Id.notification_large_body, _text);
 
     var builder = new Notification.Builder(this, NOTIFICATION_CHANNEL)
      .SetContentIntent(openAppIntent)
      .SetSmallIcon(Resource.Drawable.infinity)
      .SetOnlyAlertOnce(true)
      .SetOngoing(true)
-     .SetActions(stopServiceAction)
-     .SetStyle(new Notification
-                .BigTextStyle()?
-                //.BigText("Some Big Text")
-                .SetBigContentTitle(_text)?
-                .SetSummaryText(_title));
+     .SetActions(actions)
+     .SetStyle(new Notification.DecoratedCustomViewStyle())
+     .SetCustomContentView(layoutSmall)
+     .SetCustomBigContentView(layoutLarge)
+     .SetContentTitle(_title);
+
+#pragma warning disable CA1416 // Validate platform compatibility
+    if (_firstShow && Build.VERSION.SdkInt >= BuildVersionCodes.S)
+      builder = builder.SetForegroundServiceBehavior(1); // FOREGROUND_SERVICE_IMMEDIATE
+#pragma warning restore CA1416 // Validate platform compatibility
 
     var notification = builder.Build();
 
     if (!_ct.IsCancellationRequested)
       p_notificationManager.Notify(NOTIFICATION_ID, notification);
+
+    return notification;
   }
 
 }
