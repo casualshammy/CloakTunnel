@@ -5,6 +5,7 @@ using JustLogger.Interfaces;
 using Newtonsoft.Json;
 using SlowUdpPipe.Common.Data;
 using SlowUdpPipe.MauiClient.Interfaces;
+using SlowUdpPipe.MauiClient.Modules.TunnelsConfCtrl;
 using System.Reactive;
 using System.Reactive.Subjects;
 using static SlowUdpPipe.MauiClient.Data.Consts;
@@ -14,13 +15,23 @@ namespace SlowUdpPipe.MauiClient.Modules.PreferencesStorage;
 [ExportClass(typeof(IPreferencesStorage), Singleton: true)]
 internal class PreferencesStorageImpl : IPreferencesStorage
 {
+  private const string DEPRECATED_PREF_DB_LOCAL = "settings.local";
+  private const string DEPRECATED_PREF_DB_REMOTE = "settings.remote";
+  private const string DEPRECATED_PREF_DB_CIPHER = "settings.cipher";
+  private const string DEPRECATED_PREF_DB_KEY = "settings.key";
+  private const string DEPRECATED_PREF_DB_UP_TUNNEL_ON_APP_STARTUP = "settings.up-tunnel-on-app-startup";
+
   private readonly ILogger p_log;
+  private readonly ITunnelsConfCtrl p_tunnelsConfCtrl;
   private readonly SyncCache<string, object?> p_cache = new(new SyncCacheSettings(100, 10, TimeSpan.FromHours(1)));
   private readonly ReplaySubject<Unit> p_prefChangedFlow = new(1);
 
-  public PreferencesStorageImpl(ILogger _log)
+  public PreferencesStorageImpl(
+    ILogger _log,
+    ITunnelsConfCtrl _tunnelsConfCtrl)
   {
     p_log = _log["pref-storage"];
+    p_tunnelsConfCtrl = _tunnelsConfCtrl;
 
     SetupDefaultPreferences();
     MigratePreferences();
@@ -65,11 +76,6 @@ internal class PreferencesStorageImpl : IPreferencesStorage
       return;
 
     SetValue(PREF_DB_VERSION, 1);
-
-    SetValue(PREF_DB_LOCAL, "127.0.0.1:51820");
-    SetValue(PREF_DB_REMOTE, "1.1.1.1:51820");
-    SetValue(PREF_DB_CIPHER, EncryptionAlgorithm.Aes256);
-    SetValue(PREF_DB_KEY, "example-key");
   }
 
   private void MigratePreferences()
@@ -106,12 +112,22 @@ internal class PreferencesStorageImpl : IPreferencesStorage
 
   private IReadOnlyDictionary<int, Action> GetMigrations()
   {
-    var migrations = new Dictionary<int, Action>();
-
-    migrations.Add(175, () =>
+    var migrations = new Dictionary<int, Action>
     {
-      
-    });
+      {
+        29,
+        () => {
+          var local = GetValueOrDefault<string>(DEPRECATED_PREF_DB_LOCAL);
+          var remote = GetValueOrDefault<string>(DEPRECATED_PREF_DB_REMOTE);
+          var alg = GetValueOrDefault<EncryptionAlgorithm>(DEPRECATED_PREF_DB_CIPHER);
+          var key = GetValueOrDefault<string>(DEPRECATED_PREF_DB_KEY);
+          var autoUpTunnel = GetValueOrDefault<bool>(DEPRECATED_PREF_DB_UP_TUNNEL_ON_APP_STARTUP);
+
+          if (!local.IsNullOrEmpty() && !remote.IsNullOrEmpty() && !key.IsNullOrEmpty())
+            p_tunnelsConfCtrl.CreateTunnelConf("main-tunnel", local, remote, alg, key, autoUpTunnel);
+        }
+      }
+    };
 
     return migrations;
   }

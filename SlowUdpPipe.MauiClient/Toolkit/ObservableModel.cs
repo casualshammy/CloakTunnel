@@ -1,15 +1,14 @@
 ﻿using Grace.DependencyInjection;
-using SlowUdpPipe.MauiClient.Toolkit;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace SlowUdpPipe.MauiClient.ViewModels;
+namespace SlowUdpPipe.MauiClient.Toolkit;
 
-internal abstract class BaseViewModel : INotifyPropertyChanged
+public abstract class ObservableModel : INotifyPropertyChanged
 {
   public event PropertyChangedEventHandler? PropertyChanged;
 
-  public BaseViewModel()
+  public ObservableModel()
   {
     if (Application.Current is not CMauiApplication app)
       throw new ApplicationException($"Application is not {nameof(CMauiApplication)}");

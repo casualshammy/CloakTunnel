@@ -2,86 +2,110 @@
 using Ax.Fw.Attributes;
 using Ax.Fw.Extensions;
 using Ax.Fw.SharedTypes.Interfaces;
-using Java.Lang;
+using JustLogger;
 using JustLogger.Interfaces;
 using SlowUdpPipe.Common.Data;
 using SlowUdpPipe.Common.Modules;
+using SlowUdpPipe.MauiClient.Data;
 using SlowUdpPipe.MauiClient.Interfaces;
+using SlowUdpPipe.MauiClient.Modules.TunnelsConfCtrl;
 using SlowUdpPipe.MauiClient.Platforms.Android.Services;
 using System.Net;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using static SlowUdpPipe.MauiClient.Data.Consts;
 
 namespace SlowUdpPipe.MauiClient.Modules.UdpTunnelCtrl;
 
 [ExportClass(typeof(IUdpTunnelCtrl), Singleton: true, ActivateOnStart: true)]
 internal class UdpTunnelCtrlImpl : IUdpTunnelCtrl
 {
-  private readonly Subject<UdpTunnelStat> p_statsSubj = new();
-  private readonly ReplaySubject<bool> p_stateSubj = new(1);
+  private readonly ILogger p_log;
+  private readonly Subject<TunnelStatWithName> p_statsSubj = new();
 
   public UdpTunnelCtrlImpl(
-    IPreferencesStorage _prefStorage,
     IReadOnlyLifetime _lifetime,
-    ILogger _logger)
+    ILogger _logger,
+    ITunnelsConfCtrl _tunnelsConfCtrl)
   {
+    p_log = _logger["udp-tunnel-ctrl"];
     var instanceCounter = -1;
-    _prefStorage.PreferencesChanged
-      .Sample(TimeSpan.FromSeconds(3))
-      .CombineLatest(p_stateSubj)
-      .HotAlive(_lifetime, (_tuple, _life) =>
+
+    _tunnelsConfCtrl.TunnelsConf
+      .Throttle(TimeSpan.FromSeconds(3))
+      .HotAlive(_lifetime, (_confs, _life) =>
       {
-        var (_, enable) = _tuple;
-        if (!enable)
+        if (_confs == null)
           return;
 
-        var remote = _prefStorage.GetValueOrDefault<string>(PREF_DB_REMOTE);
-        if (remote == null || !IPEndPoint.TryParse(remote, out var remoteEndpoint))
-          return;
+        p_log.Info($"Tunnels config was changed, building tunnels...");
 
-        var local = _prefStorage.GetValueOrDefault<string>(PREF_DB_LOCAL);
-        if (local == null || !IPEndPoint.TryParse(local, out var localEndpoint))
-          return;
-
-        var key = _prefStorage.GetValueOrDefault<string>(PREF_DB_KEY);
-        if (key.IsNullOrWhiteSpace())
-          return;
-
-        var cipher = _prefStorage.GetValueOrDefault<EncryptionAlgorithm>(PREF_DB_CIPHER);
-
-        var log = _logger[Interlocked.Increment(ref instanceCounter).ToString()];
-        log.Info($"Launching udp tunnel; remote: {remoteEndpoint}, local: {localEndpoint}, cipher: {cipher}");
-
-        var options = new UdpTunnelClientOptions(remoteEndpoint, localEndpoint, cipher, key);
-        var tunnel = new UdpTunnelClient(options, _life, log);
-        tunnel.Stats.Subscribe(_ => p_statsSubj.OnNext(_), _life);
-
-        _life.DoOnEnding(() =>
+        var activeTunnels = 0;
+        foreach (var conf in _confs)
         {
+          if (!conf.Enabled)
+          {
+            p_log.Info($"Tunnel {conf.Guid} is not enabled");
+            continue;
+          }
+
+          var remote = conf.RemoteAddress;
+          if (remote == null || !IPEndPoint.TryParse(remote, out var remoteEndpoint))
+          {
+            p_log.Info($"Tunnel {conf.Guid} has incorrect remote endpoint: '{remote}'");
+            continue;
+          }
+
+          var local = conf.LocalAddress;
+          if (local == null || !IPEndPoint.TryParse(local, out var localEndpoint))
+          {
+            p_log.Info($"Tunnel {conf.Guid} has incorrect local endpoint: '{local}'");
+            continue;
+          }
+
+          var key = conf.Key;
+          if (key.IsNullOrWhiteSpace())
+          {
+            p_log.Info($"Tunnel {conf.Guid} has empty key");
+            continue;
+          }
+
+          var encryption = conf.EncryptionAlgo;
+
+          var log = _logger[Interlocked.Increment(ref instanceCounter).ToString()];
+          log.Info($"Launching udp tunnel; remote: {remoteEndpoint}, local: {localEndpoint}, cipher: {encryption}");
+
+          var options = new UdpTunnelClientOptions(remoteEndpoint, localEndpoint, encryption, key);
+          var tunnel = new UdpTunnelClient(options, _life, log);
+          tunnel.Stats.Subscribe(_ => p_statsSubj.OnNext(new TunnelStatWithName(conf.Guid, conf.Name, _.TxBytePerSecond, _.RxBytePerSecond)), _life);
+          ++activeTunnels;
+        }
+
+        if (activeTunnels > 0)
+        {
+          p_log.Info($"Total {activeTunnels} active tunnels, launching foreground service...");
+
+          _life.DoOnEnding(() =>
+          {
+            var context = global::Android.App.Application.Context;
+            var intent = new Intent(context, typeof(UdpTunnelService));
+            intent.SetAction("STOP_SERVICE");
+            context.StartService(intent);
+          });
+
           var context = global::Android.App.Application.Context;
           var intent = new Intent(context, typeof(UdpTunnelService));
-          intent.SetAction("STOP_SERVICE");
-          context.StartService(intent);
-        });
-
-        var context = global::Android.App.Application.Context;
-        var intent = new Intent(context, typeof(UdpTunnelService));
-        intent.SetAction("START_SERVICE");
-        context.StartForegroundService(intent);
+          intent.SetAction("START_SERVICE");
+          context.StartForegroundService(intent);
+        }
+        else
+        {
+          p_log.Info($"There are not active tunnels");
+        }
       });
 
-    p_stateSubj.OnNext(_prefStorage.GetValueOrDefault<bool>(PREF_DB_UP_TUNNEL_ON_APP_STARTUP));
-
-    TunnelStats = p_statsSubj;
-    State = p_stateSubj;
+    TunnelsStats = p_statsSubj;
   }
 
-  public IObservable<UdpTunnelStat> TunnelStats { get; }
-  public IObservable<bool> State { get; }
-
-  public void SetState(bool _state) => p_stateSubj.OnNext(_state);
-
-  public async Task<bool> GetStateAsync() => await p_stateSubj.FirstAsync();
+  public IObservable<TunnelStatWithName> TunnelsStats { get; }
 
 }

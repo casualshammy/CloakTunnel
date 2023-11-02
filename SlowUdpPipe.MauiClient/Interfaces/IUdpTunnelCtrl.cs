@@ -1,12 +1,9 @@
 ﻿using SlowUdpPipe.Common.Data;
+using SlowUdpPipe.MauiClient.Data;
 
 namespace SlowUdpPipe.MauiClient.Interfaces;
 
 public interface IUdpTunnelCtrl
 {
-  IObservable<UdpTunnelStat> TunnelStats { get; }
-  IObservable<bool> State { get; }
-
-  Task<bool> GetStateAsync();
-  void SetState(bool _state);
+  IObservable<TunnelStatWithName> TunnelsStats { get; }
 }

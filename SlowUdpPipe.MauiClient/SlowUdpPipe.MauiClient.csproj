@@ -14,7 +14,7 @@
 		<ApplicationIdGuid>07ee68fd-52dd-4445-a718-3d483cd654fd</ApplicationIdGuid>
 
 		<ApplicationDisplayVersion>1.0.0</ApplicationDisplayVersion>
-		<ApplicationVersion>1</ApplicationVersion>
+		<ApplicationVersion>29</ApplicationVersion>
 
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">28.0</SupportedOSPlatformVersion>
 		<TargetPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">33</TargetPlatformVersion>
@@ -60,6 +60,7 @@
 		<None Remove="Platforms\Android\Resources\layout\notification_large.xml" />
 		<None Remove="Platforms\Android\Resources\layout\notification_small.xml" />
 		<None Remove="Platforms\Android\Resources\values-night\colors.xml" />
+		<None Remove="Resources\Images\plus_circle.svg" />
 		<None Remove="_build.bat" />
 	</ItemGroup>
 
@@ -68,8 +69,26 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Compile Update="Pages\BenchmarkPage.xaml.cs">
+	    <DependentUpon>BenchmarkPage.xaml</DependentUpon>
+	  </Compile>
+	  <Compile Update="Pages\TunnelEditPage.xaml.cs">
+	    <DependentUpon>TunnelEditPage.xaml</DependentUpon>
+	  </Compile>
+	  <Compile Update="Pages\TunnelsListPage.xaml.cs">
+	    <DependentUpon>TunnelsListPage.xaml</DependentUpon>
+	  </Compile>
+	</ItemGroup>
+
+	<ItemGroup>
 		<MauiXaml Update="Controls\OptionsItem.xaml">
 			<Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Pages\BenchmarkPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Pages\TunnelEditPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
 	</ItemGroup>
 

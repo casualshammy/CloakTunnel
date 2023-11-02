@@ -41,9 +41,11 @@ public partial class NavigationAppShell : Shell
       Toast
         .Make("Press back again to exit", CommunityToolkit.Maui.Core.ToastDuration.Short)
         .Show();
+
+      return true;
     }
 
-    return true;
+    return base.OnBackButtonPressed();
   }
 
 }

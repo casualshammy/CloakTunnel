@@ -4,11 +4,18 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:local="clr-namespace:SlowUdpPipe.MauiClient.Pages"
-    Shell.FlyoutBehavior="Disabled">
+    Shell.FlyoutBehavior="Flyout">
 
     <ShellContent
-        Title="Home"
-        ContentTemplate="{DataTemplate local:MainPage}"
-        Route="MainPage" />
+        Title="Tunnels"
+        Icon="infinity.svg"
+        ContentTemplate="{DataTemplate local:TunnelsListPage}"
+        Route="TunnelsListPage" />
+
+    <ShellContent
+        Title="Benchmark"
+        Icon="benchmark_green.svg"
+        ContentTemplate="{DataTemplate local:BenchmarkPage}"
+        Route="BenchmarkPage" />
 
 </Shell>
