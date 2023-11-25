@@ -41,7 +41,7 @@ jobs:
       run: python build-server-client.py --platform linux-arm64
 
     - name: Build Client for Android
-      run: python build-maui-client.py --framework net6.0-android
+      run: python build-maui-client.py --framework net8.0-android
       env:
         ANDROID_SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }} 
 
