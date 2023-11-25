@@ -29,7 +29,7 @@ if (framework.endswith("android")):
 if (outputFileRegex == ""):
     raise FileNotFoundError(f"Can't find pkg format for framework '{framework}'")
 
-branch = git.get_current_branch()
+branch = git.get_version_from_current_branch()
 commitIndex = git.get_last_commit_index()
 version = f"{branch}.{commitIndex}"
 
