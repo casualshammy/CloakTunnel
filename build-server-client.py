@@ -29,7 +29,7 @@ pkgFileClient = os.path.join(artifactsDir, f"client-{platform}.zip")
 if (os.path.isfile(pkgFileClient)):
     os.remove(pkgFileClient)
 
-branch = git.get_current_branch()
+branch = git.get_version_from_current_branch()
 commitIndex = git.get_last_commit_index()
 version = f"{branch}.{commitIndex}"
 
@@ -77,3 +77,4 @@ print(f"Done! Client package file is '{pkgFileClient}'", flush=True)
 print(f"===========================================", flush=True)
 
 git.create_tag_and_push(version)
+git.merge("main", git.get_current_branch_name(), True, "casualshammy")

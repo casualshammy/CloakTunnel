@@ -1,49 +1,16 @@
 ﻿using Ax.Fw.Attributes;
 using Ax.Fw.JsonStorages;
+using Ax.Fw.SharedTypes.Interfaces;
 using SlowUdpPipe.Common.Data;
+using SlowUdpPipe.MauiClient.Data;
+using SlowUdpPipe.MauiClient.Interfaces;
 using SlowUdpPipe.MauiClient.ViewModels;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Reactive.Subjects;
+using System.Text.Json.Serialization;
 
 namespace SlowUdpPipe.MauiClient.Modules.TunnelsConfCtrl;
-
-public interface ITunnelsConfCtrl
-{
-  IObservable<Guid> TunnelConfRemoved { get; }
-  IObservable<TunnelsConfEntry> TunnelConfAdded { get; }
-  IObservable<TunnelsConfEntry> TunnelConfChanged { get; }
-  IObservable<ICollection<TunnelsConfEntry>> TunnelsConf { get; }
-
-  TunnelsConfEntry CreateTunnelConf();
-  TunnelsConfEntry CreateTunnelConf(string _name, string _local, string _remote, EncryptionAlgorithm _alg, string _key, bool _enabled);
-  IReadOnlyList<TunnelsConfEntry> GetConfs();
-  void DeleteTunnelConf(Guid _tunnelGuid);
-  void UpdateTunnel(TunnelEditViewModel _model);
-  void DisableTunnel(Guid _tunnelGuid);
-}
-
-public record TunnelsConfEntry(
-    Guid Guid,
-    string Name,
-    string LocalAddress,
-    string RemoteAddress,
-    EncryptionAlgorithm EncryptionAlgo,
-    string Key,
-    bool Enabled)
-{
-  public static TunnelsConfEntry FromModel(TunnelEditViewModel _model)
-  {
-    return new TunnelsConfEntry(
-      _model.Guid,
-      _model.Name,
-      _model.LocalAddress,
-      _model.RemoteAddress,
-      Consts.ENCRYPTION_ALG_SLUG_REVERSE[_model.EncryptionAlgo],
-      _model.Key,
-      _model.Enabled);
-  }
-};
 
 [ExportClass(typeof(ITunnelsConfCtrl), Singleton: true)]
 public class TunnelsConfCtrlImpl : ITunnelsConfCtrl
@@ -55,12 +22,12 @@ public class TunnelsConfCtrlImpl : ITunnelsConfCtrl
   private readonly Subject<TunnelsConfEntry> p_confAddedSubj = new();
   private readonly Subject<TunnelsConfEntry> p_confChangedSubj = new();
 
-  public TunnelsConfCtrlImpl()
+  public TunnelsConfCtrlImpl(IReadOnlyLifetime _lifetime)
   {
     var tunnelsConfPath = Path.Combine(FileSystem.Current.AppDataDirectory, "tunnels.json");
-    p_storage = new(tunnelsConfPath);
+    p_storage = new(tunnelsConfPath, TunnelsConfigFileJsonSerializationContext.Default.ConcurrentDictionaryGuidTunnelsConfEntry, _lifetime);
 
-    p_tunnels = p_storage.Load(() => new ConcurrentDictionary<Guid, TunnelsConfEntry>());
+    p_tunnels = p_storage.Read(() => new ConcurrentDictionary<Guid, TunnelsConfEntry>());
     p_confsSubj.OnNext(p_tunnels.Values);
 
     TunnelConfRemoved = p_confRemovedSubj;
@@ -80,7 +47,7 @@ public class TunnelsConfCtrlImpl : ITunnelsConfCtrl
   public void DeleteTunnelConf(Guid _tunnelGuid)
   {
     p_tunnels.TryRemove(_tunnelGuid, out _);
-    p_storage.Save(p_tunnels, true);
+    p_storage.Write(p_tunnels);
     p_confRemovedSubj.OnNext(_tunnelGuid);
     p_confsSubj.OnNext(p_tunnels.Values);
   }
@@ -98,7 +65,7 @@ public class TunnelsConfCtrlImpl : ITunnelsConfCtrl
       false);
 
     p_tunnels.TryAdd(guid, conf);
-    p_storage.Save(p_tunnels, true);
+    p_storage.Write(p_tunnels);
 
     p_confAddedSubj.OnNext(conf);
     p_confsSubj.OnNext(p_tunnels.Values);
@@ -124,7 +91,7 @@ public class TunnelsConfCtrlImpl : ITunnelsConfCtrl
       _enabled);
 
     p_tunnels.TryAdd(guid, conf);
-    p_storage.Save(p_tunnels, true);
+    p_storage.Write(p_tunnels);
 
     p_confAddedSubj.OnNext(conf);
     p_confsSubj.OnNext(p_tunnels.Values);
@@ -141,12 +108,12 @@ public class TunnelsConfCtrlImpl : ITunnelsConfCtrl
       _model.Name,
       _model.LocalAddress,
       _model.RemoteAddress,
-      Consts.ENCRYPTION_ALG_SLUG_REVERSE[_model.EncryptionAlgo],
+      Common.Data.Consts.ENCRYPTION_ALG_SLUG_REVERSE[_model.EncryptionAlgo],
       _model.Key,
       _model.Enabled);
 
     p_tunnels[_model.Guid] = newConf;
-    p_storage.Save(p_tunnels, true);
+    p_storage.Write(p_tunnels);
 
     p_confChangedSubj.OnNext(newConf);
     p_confsSubj.OnNext(p_tunnels.Values);
@@ -160,10 +127,16 @@ public class TunnelsConfCtrlImpl : ITunnelsConfCtrl
     var newConf = tunnel with { Enabled = false };
 
     p_tunnels[_tunnelGuid] = newConf;
-    p_storage.Save(p_tunnels, true);
+    p_storage.Write(p_tunnels);
 
     p_confChangedSubj.OnNext(newConf);
     p_confsSubj.OnNext(p_tunnels.Values);
   }
+
+}
+
+[JsonSerializable(typeof(ConcurrentDictionary<Guid, TunnelsConfEntry>))]
+internal partial class TunnelsConfigFileJsonSerializationContext : JsonSerializerContext
+{
 
 }

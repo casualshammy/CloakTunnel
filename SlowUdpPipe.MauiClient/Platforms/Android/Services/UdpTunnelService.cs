@@ -12,7 +12,6 @@ using Grace.DependencyInjection.Attributes;
 using SlowUdpPipe.Common.Toolkit;
 using SlowUdpPipe.MauiClient.Data;
 using SlowUdpPipe.MauiClient.Interfaces;
-using SlowUdpPipe.MauiClient.Modules.TunnelsConfCtrl;
 using SlowUdpPipe.MauiClient.Toolkit;
 using System;
 using System.Collections.Concurrent;

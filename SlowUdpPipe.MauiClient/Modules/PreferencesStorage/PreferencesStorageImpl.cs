@@ -2,13 +2,12 @@
 using Ax.Fw.Cache;
 using Ax.Fw.Extensions;
 using JustLogger.Interfaces;
-using Newtonsoft.Json;
 using SlowUdpPipe.Common.Data;
 using SlowUdpPipe.MauiClient.Interfaces;
-using SlowUdpPipe.MauiClient.Modules.TunnelsConfCtrl;
 using System.Reactive;
 using System.Reactive.Subjects;
-using static SlowUdpPipe.MauiClient.Data.Consts;
+using System.Text.Json;
+using static SlowUdpPipe.MauiClient.Data.AppConsts;
 
 namespace SlowUdpPipe.MauiClient.Modules.PreferencesStorage;
 
@@ -50,14 +49,14 @@ internal class PreferencesStorageImpl : IPreferencesStorage
     if (preferenceValue == null)
       return default;
 
-    obj = JsonConvert.DeserializeObject<T>(preferenceValue);
+    obj = JsonSerializer.Deserialize<T>(preferenceValue);
     p_cache.Put(_key, obj);
     return (T?)obj;
   }
 
   public void SetValue<T>(string _key, T? _value)
   {
-    var json = JsonConvert.SerializeObject(_value);
+    var json = JsonSerializer.Serialize(_value);
     Preferences.Default.Set(_key, json);
     p_cache.Put(_key, _value);
     p_prefChangedFlow.OnNext();

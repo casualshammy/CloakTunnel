@@ -8,7 +8,6 @@ using SlowUdpPipe.Common.Data;
 using SlowUdpPipe.Common.Modules;
 using SlowUdpPipe.MauiClient.Data;
 using SlowUdpPipe.MauiClient.Interfaces;
-using SlowUdpPipe.MauiClient.Modules.TunnelsConfCtrl;
 using SlowUdpPipe.MauiClient.Platforms.Android.Services;
 using System.Net;
 using System.Reactive.Linq;

@@ -7,6 +7,8 @@ public enum EncryptionAlgorithm
   Aes256,
   AesGcm128,
   AesGcm256,
+  AesGcmObfs128,
+  AesGcmObfs256,
   ChaCha20Poly1305,
   Xor
 }

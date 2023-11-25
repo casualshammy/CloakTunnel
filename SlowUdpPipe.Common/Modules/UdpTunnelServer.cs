@@ -42,10 +42,10 @@ public class UdpTunnelServer
     p_stats = _lifetime.ToDisposeOnEnded(new ReplaySubject<UdpTunnelStat>(1));
     p_clientUnknownEncryptionSubj = _lifetime.ToDisposeOnEnded(new Subject<EndPoint>());
 
-    var remoteClientsSocket = _lifetime.ToDisposeOnEnded(new Socket(p_options.Local.Address.AddressFamily, SocketType.Dgram, ProtocolType.Udp));
+    var acceptClientsSocket = _lifetime.ToDisposeOnEnded(new Socket(p_options.Local.Address.AddressFamily, SocketType.Dgram, ProtocolType.Udp));
     try
     {
-      remoteClientsSocket.Bind(p_options.Local);
+      acceptClientsSocket.Bind(p_options.Local);
     }
     catch (SocketException sex) when (sex.SocketErrorCode == SocketError.AddressAlreadyInUse)
     {
@@ -58,7 +58,7 @@ public class UdpTunnelServer
       return;
     }
 
-    var remoteClientsRoutineThread = new Thread(() => CreateRemoteClientsRoutineRoutine(remoteClientsSocket, _lifetime)) { Priority = ThreadPriority.Highest };
+    var remoteClientsRoutineThread = new Thread(() => CreateAcceptClientsListener(acceptClientsSocket, _lifetime)) { Priority = ThreadPriority.Highest };
     remoteClientsRoutineThread.Start();
 
     Observable
@@ -110,7 +110,7 @@ public class UdpTunnelServer
 
   public IObservable<UdpTunnelStat> Stats => p_stats;
 
-  private void CreateRemoteClientsRoutineRoutine(
+  private void CreateAcceptClientsListener(
     Socket _remoteClientsSocket,
     IReadOnlyLifetime _lifetime)
   {
@@ -118,7 +118,7 @@ public class UdpTunnelServer
     EndPoint remoteClientEndpoint = new IPEndPoint(IPAddress.Any, short.MaxValue);
     var remoteEndpoint = p_options.Remote;
 
-    p_logger.Info($"Remote clients socket routine is started");
+    p_logger.Info($"Accept clients listener is started");
 
     while (!_lifetime.IsCancellationRequested)
     {
@@ -158,15 +158,15 @@ public class UdpTunnelServer
       }
       catch (SocketException sexi)
       {
-        p_logger.Error($"Local interface SocketException error; code: '{sexi.ErrorCode}'", sexi);
+        p_logger.Error($"Accept clients listener SocketException error; code: '{sexi.ErrorCode}'", sexi);
       }
       catch (Exception ex)
       {
-        p_logger.Error("Local interface error", ex);
+        p_logger.Error("Accept clients listener error", ex);
       }
     }
 
-    p_logger.Info($"Remote clients socket routine is ended");
+    p_logger.Info($"Accept clients listener is ended");
   }
 
   private void CreateLocalServiceRoutine(
@@ -180,7 +180,7 @@ public class UdpTunnelServer
     EndPoint localServiceEndpoint = new IPEndPoint(IPAddress.Any, short.MaxValue);
     var encryptor = GetCrypto(_lifetime, _algorithm);
 
-    p_logger.Info($"[{_remoteClientEndpoint}] Local service socket routine is started");
+    p_logger.Info($"[{_remoteClientEndpoint}] Local service tunnel is started");
 
     while (!_lifetime.IsCancellationRequested)
     {
@@ -200,27 +200,27 @@ public class UdpTunnelServer
           Interlocked.Add(ref p_byteSentCount, (ulong)dataToSend.Length);
         }
       }
-      catch (SocketException sex) when (sex.ErrorCode == 10004) // Interrupted function call
+      catch (SocketException sex) when (sex.ErrorCode == 10004 || sex.ErrorCode == 4) // Interrupted function call
       {
-        // ignore (caused be client cleanup)
+        // ignore (caused by client cleanup)
       }
       catch (SocketException sexi)
       {
-        p_logger.Error($"Local interface SocketException error; code: '{sexi.ErrorCode}'", sexi);
+        p_logger.Error($"Local service tunnel SocketException error; code: '{sexi.ErrorCode}'", sexi);
       }
       catch (Exception ex)
       {
-        p_logger.Error("Remote interface error", ex);
+        p_logger.Error("Local service tunnel error", ex);
       }
     }
 
-    p_logger.Info($"[{_remoteClientEndpoint}] Local service socket routine is ended");
+    p_logger.Info($"[{_remoteClientEndpoint}] Local service tunnel routine is ended");
   }
 
   private ClientInfo? AllocateNewClient(
-    Socket _remoteClientsSocket, 
-    EndPoint _remoteClientEndpoint, 
-    Span<byte> _firstChunk, 
+    Socket _remoteClientsSocket,
+    EndPoint _remoteClientEndpoint,
+    Span<byte> _firstChunk,
     out EncryptionAlgorithm _encryptionAlgorithm)
   {
     var lifetime = p_lifetime.GetChildLifetime();
@@ -259,6 +259,8 @@ public class UdpTunnelServer
       EncryptionAlgorithm.Aes256 => new AesCbc(_lifetime, p_options.Key, 256),
       EncryptionAlgorithm.AesGcm128 => new AesWithGcm(_lifetime, p_options.Key, 128),
       EncryptionAlgorithm.AesGcm256 => new AesWithGcm(_lifetime, p_options.Key, 256),
+      EncryptionAlgorithm.AesGcmObfs128 => new AesWithGcmObfs(_lifetime, p_options.Key, Consts.MAX_UDP_PACKET_PAYLOAD_SIZE, 128),
+      EncryptionAlgorithm.AesGcmObfs256 => new AesWithGcmObfs(_lifetime, p_options.Key, Consts.MAX_UDP_PACKET_PAYLOAD_SIZE, 256),
       EncryptionAlgorithm.ChaCha20Poly1305 => new ChaCha20WithPoly1305(_lifetime, p_options.Key),
       EncryptionAlgorithm.Xor => new Xor(Encoding.UTF8.GetBytes(p_options.Key)),
       _ => throw new InvalidOperationException($"Crypto algorithm is not specified!"),
@@ -280,6 +282,8 @@ public class UdpTunnelServer
       { EncryptionAlgorithm.Aes256,() =>  new AesCbc(lifetime, key, 256) },
       { EncryptionAlgorithm.AesGcm128,() =>  new AesWithGcm(lifetime, key, 128) },
       { EncryptionAlgorithm.AesGcm256, () => new AesWithGcm(lifetime, key, 256) },
+      { EncryptionAlgorithm.AesGcmObfs128, () => new AesWithGcmObfs(lifetime, key, Consts.MAX_UDP_PACKET_PAYLOAD_SIZE, 128) },
+      { EncryptionAlgorithm.AesGcmObfs256, () => new AesWithGcmObfs(lifetime, key, Consts.MAX_UDP_PACKET_PAYLOAD_SIZE, 256) },
       { EncryptionAlgorithm.ChaCha20Poly1305,() => new ChaCha20WithPoly1305(lifetime, key) },
       { EncryptionAlgorithm.Xor, () => new Xor(Encoding.UTF8.GetBytes(key)) }
     };

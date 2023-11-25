@@ -1,5 +1,5 @@
 ﻿using JustLogger.Interfaces;
-using SlowUdpPipe.MauiClient.Modules.TunnelsConfCtrl;
+using SlowUdpPipe.MauiClient.Interfaces;
 using SlowUdpPipe.MauiClient.Toolkit;
 using SlowUdpPipe.MauiClient.ViewModels;
 

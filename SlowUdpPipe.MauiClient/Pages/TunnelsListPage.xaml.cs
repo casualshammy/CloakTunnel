@@ -1,13 +1,11 @@
 ﻿using Ax.Fw.Extensions;
 using Ax.Fw.SharedTypes.Interfaces;
 using SlowUdpPipe.MauiClient.Interfaces;
-using SlowUdpPipe.MauiClient.Modules.TunnelsConfCtrl;
 using SlowUdpPipe.MauiClient.Toolkit;
 using SlowUdpPipe.MauiClient.ViewModels;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using static Android.Content.ClipData;
-using static SlowUdpPipe.MauiClient.Data.Consts;
+using static SlowUdpPipe.MauiClient.Data.AppConsts;
 
 namespace SlowUdpPipe.MauiClient.Pages;
 

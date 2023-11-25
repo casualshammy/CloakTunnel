@@ -33,6 +33,8 @@ public static class EncryptionAlgorithmsTest
       { EncryptionAlgorithm.Aes256,() =>  new AesCbc(_lifetime, key, 256) },
       { EncryptionAlgorithm.AesGcm128,() =>  new AesWithGcm(_lifetime, key, 128) },
       { EncryptionAlgorithm.AesGcm256, () => new AesWithGcm(_lifetime, key, 256) },
+      { EncryptionAlgorithm.AesGcmObfs128,() =>  new AesWithGcmObfs(_lifetime, key, Consts.MAX_UDP_PACKET_PAYLOAD_SIZE, 128) },
+      { EncryptionAlgorithm.AesGcmObfs256, () => new AesWithGcmObfs(_lifetime, key, Consts.MAX_UDP_PACKET_PAYLOAD_SIZE, 256) },
       { EncryptionAlgorithm.ChaCha20Poly1305,() =>  new ChaCha20WithPoly1305(_lifetime, key) },
       { EncryptionAlgorithm.Xor, () => new Xor(Encoding.UTF8.GetBytes(key)) }
     };
@@ -41,9 +43,12 @@ public static class EncryptionAlgorithmsTest
     var workCount = algos.Count * iterations;
     var iteration = 0d;
 
-    var buffer = new byte[128 * 1024];
-    Random.Shared.NextBytes(buffer);
-    var totalWorkBytes = iterations * buffer.Length;
+    var bigBuffer = new byte[128 * 1024];
+    Random.Shared.NextBytes(bigBuffer);
+    var smallBuffer = new byte[Consts.MAX_UDP_PACKET_PAYLOAD_SIZE / 2];
+    Random.Shared.NextBytes(smallBuffer);
+
+    var totalWorkBytes = iterations * (bigBuffer.Length + smallBuffer.Length);
     var sw = Stopwatch.StartNew();
     foreach (var (algorithm, algorithmFactory) in algos)
     {
@@ -54,15 +59,20 @@ public static class EncryptionAlgorithmsTest
         sw.Restart();
         for (int i = 0; i < iterations; i++)
         {
-          var encrypted = algo.Encrypt(buffer);
-          algo.Decrypt(encrypted);
+          var encryptedBig = algo.Encrypt(bigBuffer);
+          algo.Decrypt(encryptedBig);
+
+          var encryptedSmall = algo.Encrypt(smallBuffer);
+          algo.Decrypt(encryptedSmall);
+
           _progress?.Invoke(++iteration / workCount);
         }
         result = sw.ElapsedMilliseconds;
       }
       catch
       {
-        _progress?.Invoke((iteration + iterations) / workCount);
+        iteration += iterations;
+        _progress?.Invoke(iteration / workCount);
       }
 
       yield return new CryptoBenchmarkResult(algorithm, totalWorkBytes, result);

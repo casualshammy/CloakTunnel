@@ -2,7 +2,6 @@
 using SlowUdpPipe.Common.Data;
 using SlowUdpPipe.MauiClient.Data;
 using SlowUdpPipe.MauiClient.Interfaces;
-using SlowUdpPipe.MauiClient.Modules.TunnelsConfCtrl;
 using SlowUdpPipe.MauiClient.Toolkit;
 using System.Net;
 using System.Reactive.Linq;
@@ -50,7 +49,7 @@ public class TunnelEditViewModel : ObservableModel
   }
 
   public Guid Guid { get; }
-  public Color DeleteBtnColor => Data.Consts.COLOR_DELETE_TUNNEL;
+  public Color DeleteBtnColor => Data.AppConsts.COLOR_DELETE_TUNNEL;
   public string DeleteBtnText => "Delete tunnel";
 
   public string Name

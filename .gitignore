@@ -15,3 +15,5 @@
 /SlowUdpPipe.Server/local.json
 /SlowUdpPipe.Client/_ws-test.json
 /SlowUdpPipe.Server/_ws-test.json
+/SlowUdpPipe.Server/SlowUdpPipe.Server.csproj.user
+/SlowUdpPipe.MauiClient/SlowUdpPipe.MauiClient.csproj.user

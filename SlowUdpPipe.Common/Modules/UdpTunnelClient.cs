@@ -52,7 +52,7 @@ public class UdpTunnelClient
       p_logger.Error($"Can't bind to address {p_options.Local}: {ex.Message}");
       return;
     }
-    
+
     var localServiceSocketRoutineThread = new Thread(() => CreateLocalServiceRoutine(localServiceSocket, _lifetime)) { Priority = ThreadPriority.Highest };
     localServiceSocketRoutineThread.Start();
 
@@ -194,7 +194,7 @@ public class UdpTunnelClient
   }
 
   private ClientInfo AllocateNewClient(
-    Socket _localServiceSocket, 
+    Socket _localServiceSocket,
     EndPoint _localServiceEndpoint)
   {
     var lifetime = p_lifetime.GetChildLifetime();
@@ -223,6 +223,8 @@ public class UdpTunnelClient
       EncryptionAlgorithm.Aes256 => new AesCbc(_lifetime, p_options.Key, 256),
       EncryptionAlgorithm.AesGcm128 => new AesWithGcm(_lifetime, p_options.Key, 128),
       EncryptionAlgorithm.AesGcm256 => new AesWithGcm(_lifetime, p_options.Key, 256),
+      EncryptionAlgorithm.AesGcmObfs128 => new AesWithGcmObfs(_lifetime, p_options.Key, Consts.MAX_UDP_PACKET_PAYLOAD_SIZE, 128),
+      EncryptionAlgorithm.AesGcmObfs256 => new AesWithGcmObfs(_lifetime, p_options.Key, Consts.MAX_UDP_PACKET_PAYLOAD_SIZE, 256),
       EncryptionAlgorithm.ChaCha20Poly1305 => new ChaCha20WithPoly1305(_lifetime, p_options.Key),
       EncryptionAlgorithm.Xor => new Xor(Encoding.UTF8.GetBytes(p_options.Key)),
       _ => throw new InvalidOperationException($"Crypto algorithm is not specified!"),

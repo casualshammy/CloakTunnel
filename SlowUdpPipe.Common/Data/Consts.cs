@@ -16,6 +16,8 @@ public static class Consts
       { EncryptionAlgorithm.Aes256, "aes-256" },
       { EncryptionAlgorithm.AesGcm128, "aes-gcm-128" },
       { EncryptionAlgorithm.AesGcm256, "aes-gcm-256" },
+      { EncryptionAlgorithm.AesGcmObfs128, "aes-gcm-obfs-128" },
+      { EncryptionAlgorithm.AesGcmObfs256, "aes-gcm-obfs-256" },
       { EncryptionAlgorithm.ChaCha20Poly1305, "chacha20-poly1305" },
       { EncryptionAlgorithm.Xor, "xor" }
     };
@@ -25,6 +27,8 @@ public static class Consts
       { "aes-256", EncryptionAlgorithm.Aes256 },
       { "aes-gcm-128", EncryptionAlgorithm.AesGcm128 },
       { "aes-gcm-256", EncryptionAlgorithm.AesGcm256 },
+      { "aes-gcm-obfs-128", EncryptionAlgorithm.AesGcmObfs128 },
+      { "aes-gcm-obfs-256", EncryptionAlgorithm.AesGcmObfs256 },
       { "chacha20-poly1305", EncryptionAlgorithm.ChaCha20Poly1305 },
       { "xor", EncryptionAlgorithm.Xor }
     };
@@ -34,6 +38,8 @@ public static class Consts
       EncryptionAlgorithm.Aes256,
       EncryptionAlgorithm.AesGcm128,
       EncryptionAlgorithm.AesGcm256,
+      EncryptionAlgorithm.AesGcmObfs128,
+      EncryptionAlgorithm.AesGcmObfs256,
       EncryptionAlgorithm.ChaCha20Poly1305,
       EncryptionAlgorithm.Xor
     };

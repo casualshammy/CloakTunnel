@@ -56,7 +56,7 @@ public class Program
     lifetime.DoOnEnded(() =>
     {
       logger.Info($"-------------------------------------------");
-      logger.Info($"Server stopped");
+      logger.Info($"Client stopped");
       logger.Info($"-------------------------------------------");
     });
 

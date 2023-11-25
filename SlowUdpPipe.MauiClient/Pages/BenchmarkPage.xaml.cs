@@ -38,7 +38,7 @@ public partial class BenchmarkPage : CContentPage
     if (btn != null)
     {
       btn.IsEnabled = false;
-      btn.Background = Data.Consts.COLOR_UP_TUNNEL_ON;
+      btn.Background = Data.AppConsts.COLOR_UP_TUNNEL_ON;
     }
 
     try
@@ -69,7 +69,7 @@ public partial class BenchmarkPage : CContentPage
       if (btn != null)
       {
         btn.IsEnabled = true;
-        btn.Background = Data.Consts.COLOR_UP_TUNNEL_OFF;
+        btn.Background = Data.AppConsts.COLOR_UP_TUNNEL_OFF;
       }
     }
   }

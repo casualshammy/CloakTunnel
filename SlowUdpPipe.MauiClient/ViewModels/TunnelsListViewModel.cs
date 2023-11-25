@@ -4,11 +4,10 @@ using Ax.Fw.SharedTypes.Interfaces;
 using SlowUdpPipe.Common.Data;
 using SlowUdpPipe.MauiClient.Data;
 using SlowUdpPipe.MauiClient.Interfaces;
-using SlowUdpPipe.MauiClient.Modules.TunnelsConfCtrl;
 using SlowUdpPipe.MauiClient.Toolkit;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
-using static SlowUdpPipe.MauiClient.Data.Consts;
+using static SlowUdpPipe.MauiClient.Data.AppConsts;
 
 namespace SlowUdpPipe.MauiClient.ViewModels;
 
