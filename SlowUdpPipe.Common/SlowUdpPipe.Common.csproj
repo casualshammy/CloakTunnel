@@ -1,14 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<Nullable>enable</Nullable>
-	</PropertyGroup>
+		<PropertyGroup>
+				<TargetFramework>net8.0</TargetFramework>
+				<ImplicitUsings>enable</ImplicitUsings>
+				<Nullable>enable</Nullable>
+		</PropertyGroup>
 
-	<ItemGroup>
-		<PackageReference Include="Ax.Fw" Version="13.0.195" />
-		<PackageReference Include="JustLogger" Version="3.0.1" />
-	</ItemGroup>
+		<ItemGroup>
+				<PackageReference Include="Ax.Fw" Version="13.0.197" />
+				<PackageReference Include="JustLogger" Version="3.0.1" />
+		</ItemGroup>
 
 </Project>

@@ -6,19 +6,17 @@ on:
       - 'dev/**'
 
 jobs:
-  build:
+  windows:
 
     runs-on: windows-latest
     permissions: write-all
       
     steps:
-    - name: Get dotnet
-      uses: actions/setup-dotnet@v3
+    - uses: actions/setup-dotnet@v3
       with:
         dotnet-version: '8.0.x'
-      
-    - name: Install Python3   
-      uses: actions/setup-python@v4
+    
+    - uses: actions/setup-python@v4
       with:
         python-version: '3.11'
         architecture: 'x64'
@@ -28,22 +26,41 @@ jobs:
         submodules: true
         fetch-depth: 0
 
-    - name: Build Server and Client for Windows x64
-      run: python build-server-client.py --platform win-x64
+    - run: python build-server-client.py --platform win-x64
 
-    - name: Build Server and Client for Ubuntu 18.04 x64
-      run: python build-server-client.py --platform ubuntu.18.04-x64
+    - uses: softprops/action-gh-release@v1
+      with:
+        draft: false
+        prerelease: false
+        files: |
+          artifacts/*.zip
+        name: "Release ${{ env.tag }}"
+        tag_name: "${{ env.tag }}"
+        fail_on_unmatched_files: true
+        token: ${{ secrets.GITHUB_TOKEN }}
+        generate_release_notes: false
 
-    - name: Build Server and Client for Linux Arm
-      run: python build-server-client.py --platform linux-arm
-    
-    - name: Build Server and Client for Linux Arm64
-      run: python build-server-client.py --platform linux-arm64
+  linux:
 
-    - name: Build Client for Android
-      run: python build-maui-client.py --framework net8.0-android
-      env:
-        ANDROID_SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }} 
+    runs-on: ubuntu-20.04
+    permissions: write-all
+      
+    steps:
+    - uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0.x'
+      
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        architecture: 'x64'
+      
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
+        fetch-depth: 0
+
+    - run: python build-server-client.py --platform linux-x64
 
     - name: Create Github Release
       uses: softprops/action-gh-release@v1
@@ -52,6 +69,41 @@ jobs:
         prerelease: false
         files: |
           artifacts/*.zip
+        name: "Release ${{ env.tag }}"
+        tag_name: "${{ env.tag }}"
+        fail_on_unmatched_files: true
+        token: ${{ secrets.GITHUB_TOKEN }}
+        generate_release_notes: false
+
+  android:
+
+    runs-on: windows-latest
+    permissions: write-all
+
+    steps:
+    - uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0.x'
+      
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        architecture: 'x64'
+      
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
+        fetch-depth: 0
+
+    - run: python build-maui-client.py --framework net8.0-android
+      env:
+        ANDROID_SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }} 
+
+    - uses: softprops/action-gh-release@v1
+      with:
+        draft: false
+        prerelease: false
+        files: |
           artifacts/*.apk
           artifacts/*.aab
         name: "Release ${{ env.tag }}"
@@ -60,8 +112,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         generate_release_notes: false
 
-    - name: Upload Google Console Release
-      uses: r0adkll/upload-google-play@v1
+    - uses: r0adkll/upload-google-play@v1
       with:
         serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
         packageName: com.axiolab.slowudppipe

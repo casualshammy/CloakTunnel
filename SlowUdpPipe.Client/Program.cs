@@ -1,10 +1,9 @@
 ﻿using Ax.Fw;
 using Ax.Fw.DependencyInjection;
 using Ax.Fw.SharedTypes.Interfaces;
-using CommandLine;
+using FluentArgs;
 using JustLogger;
 using JustLogger.Interfaces;
-using SlowUdpPipe.Client.Data;
 using SlowUdpPipe.Client.Interfaces;
 using SlowUdpPipe.Client.Modules.SettingsProvider;
 using SlowUdpPipe.Client.Modules.UdpProxy;
@@ -18,7 +17,6 @@ public class Program
   public static async Task Main(string[] _args)
   {
     var assembly = Assembly.GetExecutingAssembly() ?? throw new Exception("Can't get assembly!");
-    var workingDir = Path.GetDirectoryName(assembly.Location) ?? throw new Exception("Can't get working dir!");
 
     var lifetime = new Lifetime();
     using var logger = new ConsoleLogger();
@@ -37,16 +35,20 @@ public class Program
       return;
     }
 
-    var options = Parser.Default
-      .ParseArguments<CommandLineOptions>(_args);
-
-    if (options.Value == null)
-      return;
+    var configFilePath = (string?)null;
+    FluentArgsBuilder
+      .New()
+      .Parameter("-c", "--config").WithDescription("Path to config file").IsOptional()
+      .Call(_configPath =>
+      {
+        configFilePath = _configPath;
+      })
+      .Parse(_args ?? []);
 
     SettingsProviderImpl settingsProvider;
     try
     {
-      settingsProvider = new SettingsProviderImpl(options.Value, lifetime);
+      settingsProvider = new SettingsProviderImpl(configFilePath, lifetime);
     }
     catch (Exception ex)
     {

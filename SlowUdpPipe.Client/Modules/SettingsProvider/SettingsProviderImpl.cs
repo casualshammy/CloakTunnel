@@ -10,12 +10,12 @@ namespace SlowUdpPipe.Client.Modules.SettingsProvider;
 
 internal class SettingsProviderImpl : ISettingsProvider
 {
-  public SettingsProviderImpl(CommandLineOptions _options, IReadOnlyLifetime _lifetime)
+  public SettingsProviderImpl(string? _configFilePath, IReadOnlyLifetime _lifetime)
   {
-    if (_options.ConfigFilePath.IsNullOrWhiteSpace())
+    if (_configFilePath.IsNullOrWhiteSpace())
       throw new InvalidDataException("Path to config file is empty!");
 
-    _ = File.ReadAllBytes(_options.ConfigFilePath);
+    _ = File.ReadAllBytes(_configFilePath);
 
     var lifetime = _lifetime.GetChildLifetime();
     if (lifetime == null)
@@ -28,7 +28,7 @@ internal class SettingsProviderImpl : ISettingsProvider
     };
     var jsonCtx = new ConfigFileJsonSerializationContext(jsonOptions);
 
-    var config = new JsonStorage<IReadOnlyDictionary<string, UdpTunnelClientRawOptions>>(_options.ConfigFilePath, jsonCtx.IReadOnlyDictionaryStringUdpTunnelClientRawOptions, lifetime);
+    var config = new JsonStorage<IReadOnlyDictionary<string, UdpTunnelClientRawOptions>>(_configFilePath, jsonCtx.IReadOnlyDictionaryStringUdpTunnelClientRawOptions, lifetime);
     Definitions = config;
   }
 

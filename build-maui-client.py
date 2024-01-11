@@ -10,7 +10,7 @@ signingPassword = os.environ['ANDROID_SIGNING_KEY_PASSWORD']
 sourceDirName = "SlowUdpPipe.MauiClient"
 
 argParser = argparse.ArgumentParser()
-argParser.add_argument('--framework', type=str, default= "net6.0-android", required=False, help='Target framework of server')
+argParser.add_argument('--framework', type=str, default= "net8.0-android", required=False, help='Target framework of server')
 args = argParser.parse_args()
 framework: str = args.framework
 
