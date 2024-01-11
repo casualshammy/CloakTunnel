@@ -1,11 +1,16 @@
 ﻿using Ax.Fw.Attributes;
+using Ax.Fw.DependencyInjection;
 using SlowUdpPipe.MauiClient.Interfaces;
 
 namespace SlowUdpPipe.MauiClient.Modules.PageController;
 
-[ExportClass(typeof(IPagesController), Singleton: true)]
-internal class PagesControllerImpl : IPagesController
+internal class PagesControllerImpl : IPagesController, IAppModule<PagesControllerImpl>
 {
+  public static PagesControllerImpl ExportInstance(IAppDependencyCtx _ctx)
+  {
+    return new();
+  }
+
   private volatile Page? p_currentPage;
   private volatile Page? p_mainPage;
 

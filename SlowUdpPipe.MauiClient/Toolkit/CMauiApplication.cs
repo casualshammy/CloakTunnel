@@ -1,4 +1,4 @@
-﻿using Grace.DependencyInjection;
+﻿using Ax.Fw.SharedTypes.Interfaces;
 using SlowUdpPipe.MauiClient.Interfaces;
 
 namespace SlowUdpPipe.MauiClient.Toolkit;
@@ -10,6 +10,6 @@ public abstract class CMauiApplication : Application, IMauiApp
     Container = MauiProgram.Container;
   }
 
-  public IInjectionScope Container { get; }
+  public IReadOnlyDependencyContainer Container { get; }
 
 }

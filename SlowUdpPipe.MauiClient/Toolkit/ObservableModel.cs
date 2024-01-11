@@ -1,4 +1,4 @@
-﻿using Grace.DependencyInjection;
+﻿using Ax.Fw.SharedTypes.Interfaces;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
@@ -14,11 +14,9 @@ public abstract class ObservableModel : INotifyPropertyChanged
       throw new ApplicationException($"Application is not {nameof(CMauiApplication)}");
 
     Container = app.Container;
-
-    Container.Inject(this);
   }
 
-  public IInjectionScope Container { get; }
+  public IReadOnlyDependencyContainer Container { get; }
 
   protected bool SetProperty<T>(
     ref T _backingStore,

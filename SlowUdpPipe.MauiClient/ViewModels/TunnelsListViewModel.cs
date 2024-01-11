@@ -1,7 +1,7 @@
 ﻿using Ax.Fw.Extensions;
 using Ax.Fw.JsonStorages;
 using Ax.Fw.SharedTypes.Interfaces;
-using SlowUdpPipe.Common.Data;
+using SlowUdpPipe.Common.Toolkit;
 using SlowUdpPipe.MauiClient.Data;
 using SlowUdpPipe.MauiClient.Interfaces;
 using SlowUdpPipe.MauiClient.Toolkit;
@@ -54,7 +54,7 @@ internal class TunnelsListViewModel : ObservableModel
         existingValue.Name = _conf.Name;
         existingValue.LocalAddress = _conf.LocalAddress;
         existingValue.RemoteAddress = _conf.RemoteAddress;
-        existingValue.EncryptionAlgo = Common.Data.Consts.ENCRYPTION_ALG_SLUG[_conf.EncryptionAlgo];
+        existingValue.EncryptionAlgo = EncryptionToolkit.ENCRYPTION_ALG_SLUG[_conf.EncryptionAlgo];
         existingValue.CipheredKey = _conf.Key;
         existingValue.Enabled = _conf.Enabled;
       }, lifetime);

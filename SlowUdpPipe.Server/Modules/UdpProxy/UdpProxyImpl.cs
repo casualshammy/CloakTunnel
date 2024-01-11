@@ -1,9 +1,10 @@
-﻿using Ax.Fw.Attributes;
+﻿using Ax.Fw.DependencyInjection;
 using Ax.Fw.Extensions;
 using Ax.Fw.SharedTypes.Interfaces;
 using JustLogger.Interfaces;
 using SlowUdpPipe.Common.Data;
 using SlowUdpPipe.Common.Modules;
+using SlowUdpPipe.Common.Toolkit;
 using SlowUdpPipe.Interfaces;
 using SlowUdpPipe.Server.Data;
 using System.Diagnostics.CodeAnalysis;
@@ -11,9 +12,13 @@ using System.Net;
 
 namespace SlowUdpPipe.Modules.UdpProxy;
 
-[ExportClass(typeof(UdpProxyImpl), Singleton: true, ActivateOnStart: true)]
-internal class UdpProxyImpl
+internal class UdpProxyImpl : IAppModule<UdpProxyImpl>
 {
+  public static UdpProxyImpl ExportInstance(IAppDependencyCtx _ctx)
+  {
+    return _ctx.CreateInstance((ISettingsProvider _settingsProvider, IReadOnlyLifetime _lifetime, ILogger _logger) => new UdpProxyImpl(_settingsProvider, _lifetime, _logger));
+  }
+
   private readonly ILogger p_logger;
   private int p_serverCounter = -1;
 
@@ -42,7 +47,7 @@ internal class UdpProxyImpl
           var serverIndex = Interlocked.Increment(ref p_serverCounter);
           var logger = _logger[$"{serverIndex}-{defSlug}"];
           var algosEE = opt.Algorithms
-            .Select(_ => Consts.ENCRYPTION_ALG_SLUG[_])
+            .Select(_ => EncryptionToolkit.ENCRYPTION_ALG_SLUG[_])
             .OrderBy(_ => _);
 
           logger.Warn($"Launching udp tunnel L:{opt.Local} > R:{opt.Remote}; algorithms: ({string.Join(", ", algosEE)})...");
@@ -89,13 +94,13 @@ internal class UdpProxyImpl
     var ciphers = new HashSet<EncryptionAlgorithm>();
     if (_options.Ciphers == null)
     {
-      ciphers = new(Consts.ALL_CYPHERS);
+      ciphers = new(EncryptionToolkit.ALL_CYPHERS);
     }
     else
     {
       foreach (var cipherSlug in _options.Ciphers)
       {
-        if (cipherSlug == null || !Consts.ENCRYPTION_ALG_SLUG_REVERSE.TryGetValue(cipherSlug, out var algo))
+        if (cipherSlug == null || !EncryptionToolkit.ENCRYPTION_ALG_SLUG_REVERSE.TryGetValue(cipherSlug, out var algo))
         {
           p_logger.Warn($"Definition '{_defSlug}' contains unknown encryption algorithm '{cipherSlug}'! Please refer to documentation");
           continue;

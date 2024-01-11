@@ -1,8 +1,7 @@
 ﻿using Android.Content;
-using Ax.Fw.Attributes;
+using Ax.Fw.DependencyInjection;
 using Ax.Fw.Extensions;
 using Ax.Fw.SharedTypes.Interfaces;
-using JustLogger;
 using JustLogger.Interfaces;
 using SlowUdpPipe.Common.Data;
 using SlowUdpPipe.Common.Modules;
@@ -15,9 +14,13 @@ using System.Reactive.Subjects;
 
 namespace SlowUdpPipe.MauiClient.Modules.UdpTunnelCtrl;
 
-[ExportClass(typeof(IUdpTunnelCtrl), Singleton: true, ActivateOnStart: true)]
-internal class UdpTunnelCtrlImpl : IUdpTunnelCtrl
+internal class UdpTunnelCtrlImpl : IUdpTunnelCtrl, IAppModule<UdpTunnelCtrlImpl>
 {
+  public static UdpTunnelCtrlImpl ExportInstance(IAppDependencyCtx _ctx)
+  {
+    return _ctx.CreateInstance((IReadOnlyLifetime _lifetime, ILogger _logger, ITunnelsConfCtrl _tunnelsConfCtrl) => new UdpTunnelCtrlImpl(_lifetime, _logger, _tunnelsConfCtrl));
+  }
+
   private readonly ILogger p_log;
   private readonly Subject<TunnelStatWithName> p_statsSubj = new();
 

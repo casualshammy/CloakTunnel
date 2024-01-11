@@ -7,6 +7,7 @@ using JustLogger.Interfaces;
 using SlowUdpPipe.Common.Toolkit;
 using SlowUdpPipe.Interfaces;
 using SlowUdpPipe.Modules.SettingsProvider;
+using SlowUdpPipe.Modules.UdpProxy;
 using SlowUdpPipe.Server.Data;
 using System.Reflection;
 
@@ -67,13 +68,15 @@ public class Program
     logger.Info($"OS: {Environment.OSVersion} {(Environment.Is64BitOperatingSystem ? "x64" : "x86")}");
     logger.Info($"-------------------------------------------");
 
-    var depMgr = DependencyManagerBuilder
-      .Create(lifetime, assembly)
+    _ = AppDependencyManager
+      .Create()
       .AddSingleton<ILogger>(logger)
       .AddSingleton<ILoggerDisposable>(logger)
       .AddSingleton<ILifetime>(lifetime)
       .AddSingleton<IReadOnlyLifetime>(lifetime)
       .AddSingleton<ISettingsProvider>(settingsProvider)
+      .AddModule<UdpProxyImpl>()
+      .ActivateOnStart<UdpProxyImpl>()
       .Build();
 
     void onCancelKeyPress(object? _o, ConsoleCancelEventArgs _e)

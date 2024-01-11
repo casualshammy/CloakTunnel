@@ -1,5 +1,6 @@
 ﻿using Ax.Fw.Extensions;
 using SlowUdpPipe.Common.Data;
+using SlowUdpPipe.Common.Toolkit;
 using SlowUdpPipe.MauiClient.Data;
 using SlowUdpPipe.MauiClient.Interfaces;
 using SlowUdpPipe.MauiClient.Toolkit;
@@ -102,16 +103,16 @@ public class TunnelEditViewModel : ObservableModel
   }
   public string EncryptionAlgo
   {
-    get => Common.Data.Consts.ENCRYPTION_ALG_SLUG[p_encryptionAlgo];
+    get => EncryptionToolkit.ENCRYPTION_ALG_SLUG[p_encryptionAlgo];
     set
     {
-      if (value.Equals(Common.Data.Consts.ENCRYPTION_ALG_SLUG[p_encryptionAlgo]))
+      if (value.Equals(EncryptionToolkit.ENCRYPTION_ALG_SLUG[p_encryptionAlgo]))
         return;
 
       if (value.IsNullOrWhiteSpace())
         return;
 
-      p_encryptionAlgo = Common.Data.Consts.ENCRYPTION_ALG_SLUG_REVERSE[value];
+      p_encryptionAlgo = EncryptionToolkit.ENCRYPTION_ALG_SLUG_REVERSE[value];
       p_tunnelsConfCtrl.UpdateTunnel(this);
       OnPropertyChanged(nameof(EncryptionAlgo));
     }
@@ -238,7 +239,7 @@ public class TunnelEditViewModel : ObservableModel
     if (currentPage == null)
       return;
 
-    var result = await currentPage.DisplayActionSheet("Please select algorithm:", null, null, Common.Data.Consts.ENCRYPTION_ALG_SLUG_REVERSE.Keys.ToArray());
+    var result = await currentPage.DisplayActionSheet("Please select algorithm:", null, null, EncryptionToolkit.ENCRYPTION_ALG_SLUG_REVERSE.Keys.ToArray());
     if (result == null)
       return;
 

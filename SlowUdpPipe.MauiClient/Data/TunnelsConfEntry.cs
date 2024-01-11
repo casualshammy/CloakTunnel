@@ -1,4 +1,5 @@
 ﻿using SlowUdpPipe.Common.Data;
+using SlowUdpPipe.Common.Toolkit;
 using SlowUdpPipe.MauiClient.ViewModels;
 
 namespace SlowUdpPipe.MauiClient.Data;
@@ -19,7 +20,7 @@ public record TunnelsConfEntry(
       _model.Name,
       _model.LocalAddress,
       _model.RemoteAddress,
-      Consts.ENCRYPTION_ALG_SLUG_REVERSE[_model.EncryptionAlgo],
+      EncryptionToolkit.ENCRYPTION_ALG_SLUG_REVERSE[_model.EncryptionAlgo],
       _model.Key,
       _model.Enabled);
   }

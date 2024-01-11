@@ -1,6 +1,5 @@
 ﻿using Ax.Fw.SharedTypes.Interfaces;
 using JustLogger.Interfaces;
-using SlowUdpPipe.Common.Data;
 using SlowUdpPipe.Common.Toolkit;
 using SlowUdpPipe.MauiClient.Toolkit;
 using System.Reactive.Linq;
@@ -53,7 +52,7 @@ public partial class BenchmarkPage : CContentPage
       var message = "More is better\n\n";
       foreach (var result in results)
       {
-        var algoSlug = Consts.ENCRYPTION_ALG_SLUG[result.Algorithm];
+        var algoSlug = EncryptionToolkit.ENCRYPTION_ALG_SLUG[result.Algorithm];
         if (result.ResultMs == null)
           message += $"Cipher '{algoSlug}' is not supported on this platform\n";
         else

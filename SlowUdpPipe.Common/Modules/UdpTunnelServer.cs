@@ -1,15 +1,14 @@
-﻿using Ax.Fw.Crypto;
-using Ax.Fw.Extensions;
+﻿using Ax.Fw.Extensions;
 using Ax.Fw.SharedTypes.Interfaces;
 using JustLogger.Interfaces;
 using SlowUdpPipe.Common.Data;
+using SlowUdpPipe.Common.Toolkit;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Sockets;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Text;
 
 namespace SlowUdpPipe.Common.Modules;
 
@@ -178,7 +177,7 @@ public class UdpTunnelServer
   {
     Span<byte> buffer = new byte[128 * 1024];
     EndPoint localServiceEndpoint = new IPEndPoint(IPAddress.Any, short.MaxValue);
-    var encryptor = GetCrypto(_lifetime, _algorithm);
+    var encryptor = EncryptionToolkit.GetCrypto(_algorithm, _lifetime, p_options.Key);
 
     p_logger.Info($"[{_remoteClientEndpoint}] Local service tunnel is started");
 
@@ -232,7 +231,7 @@ public class UdpTunnelServer
         return null;
       }
 
-      var decryptor = GetCrypto(lifetime, alg.Value);
+      var decryptor = EncryptionToolkit.GetCrypto(alg.Value, lifetime, p_options.Key);
 
       var localServiceSocket = lifetime.ToDisposeOnEnding(new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp));
       var thread = new Thread(() => CreateLocalServiceRoutine(
@@ -251,22 +250,6 @@ public class UdpTunnelServer
     throw new OperationCanceledException();
   }
 
-  private ICryptoAlgorithm GetCrypto(IReadOnlyLifetime _lifetime, EncryptionAlgorithm _alg)
-  {
-    return _alg switch
-    {
-      EncryptionAlgorithm.Aes128 => new AesCbc(_lifetime, p_options.Key, 128),
-      EncryptionAlgorithm.Aes256 => new AesCbc(_lifetime, p_options.Key, 256),
-      EncryptionAlgorithm.AesGcm128 => new AesWithGcm(_lifetime, p_options.Key, 128),
-      EncryptionAlgorithm.AesGcm256 => new AesWithGcm(_lifetime, p_options.Key, 256),
-      EncryptionAlgorithm.AesGcmObfs128 => new AesWithGcmObfs(_lifetime, p_options.Key, Consts.MAX_UDP_PACKET_PAYLOAD_SIZE, 128),
-      EncryptionAlgorithm.AesGcmObfs256 => new AesWithGcmObfs(_lifetime, p_options.Key, Consts.MAX_UDP_PACKET_PAYLOAD_SIZE, 256),
-      EncryptionAlgorithm.ChaCha20Poly1305 => new ChaCha20WithPoly1305(_lifetime, p_options.Key),
-      EncryptionAlgorithm.Xor => new Xor(Encoding.UTF8.GetBytes(p_options.Key)),
-      _ => throw new InvalidOperationException($"Crypto algorithm is not specified!"),
-    };
-  }
-
   private bool TryGuessEncryptionAlgorithm(Span<byte> _span, [NotNullWhen(true)] out EncryptionAlgorithm? _algo)
   {
     _algo = null;
@@ -275,29 +258,16 @@ public class UdpTunnelServer
     if (lifetime == null)
       return false;
 
-    var key = p_options.Key;
-    var algorithms = new Dictionary<EncryptionAlgorithm, Func<ICryptoAlgorithm>>()
+    foreach (var algo in EncryptionToolkit.ALL_CYPHERS)
     {
-      { EncryptionAlgorithm.Aes128, () => new AesCbc(lifetime, key, 128) },
-      { EncryptionAlgorithm.Aes256,() =>  new AesCbc(lifetime, key, 256) },
-      { EncryptionAlgorithm.AesGcm128,() =>  new AesWithGcm(lifetime, key, 128) },
-      { EncryptionAlgorithm.AesGcm256, () => new AesWithGcm(lifetime, key, 256) },
-      { EncryptionAlgorithm.AesGcmObfs128, () => new AesWithGcmObfs(lifetime, key, Consts.MAX_UDP_PACKET_PAYLOAD_SIZE, 128) },
-      { EncryptionAlgorithm.AesGcmObfs256, () => new AesWithGcmObfs(lifetime, key, Consts.MAX_UDP_PACKET_PAYLOAD_SIZE, 256) },
-      { EncryptionAlgorithm.ChaCha20Poly1305,() => new ChaCha20WithPoly1305(lifetime, key) },
-      { EncryptionAlgorithm.Xor, () => new Xor(Encoding.UTF8.GetBytes(key)) }
-    };
-
-    foreach (var (algName, algFactory) in algorithms)
-    {
-      if (!p_options.Algorithms.Contains(algName))
+      if (!p_options.Algorithms.Contains(algo))
         continue;
 
       try
       {
-        var alg = algFactory();
-        alg.Decrypt(_span);
-        _algo = algName;
+        var decryptor = EncryptionToolkit.GetCrypto(algo, lifetime, p_options.Key);
+        decryptor.Decrypt(_span);
+        _algo = algo;
         return true;
       }
       catch { }

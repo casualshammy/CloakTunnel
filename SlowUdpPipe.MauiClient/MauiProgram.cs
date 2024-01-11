@@ -2,10 +2,14 @@
 using Ax.Fw.DependencyInjection;
 using Ax.Fw.SharedTypes.Interfaces;
 using CommunityToolkit.Maui;
-using Grace.DependencyInjection;
 using JustLogger;
 using JustLogger.Interfaces;
-using System.Reflection;
+using SlowUdpPipe.MauiClient.Interfaces;
+using SlowUdpPipe.MauiClient.Modules.PageController;
+using SlowUdpPipe.MauiClient.Modules.PreferencesStorage;
+using SlowUdpPipe.MauiClient.Modules.TunnelsConfCtrl;
+using SlowUdpPipe.MauiClient.Modules.UdpTunnelCtrl;
+using SlowUdpPipe.MauiClient.Platforms.Android.Services;
 using System.Text.RegularExpressions;
 
 namespace SlowUdpPipe.MauiClient;
@@ -45,17 +49,20 @@ public static class MauiProgram
       logger.Info($"Old file was removed: '{_file.Name}'");
     }));
 
-    var assembly = Assembly.GetExecutingAssembly();
-    var containerBuilder = DependencyManagerBuilder
-      .Create(lifetime, assembly)
+    Container = AppDependencyManager
+      .Create()
       .AddSingleton<ILifetime>(lifetime)
       .AddSingleton<IReadOnlyLifetime>(lifetime)
       .AddSingleton<ILogger>(logger)
+      .AddModule<UdpTunnelService, IUdpTunnelService>()
+      .AddModule<UdpTunnelCtrlImpl, IUdpTunnelCtrl>()
+      .AddModule<TunnelsConfCtrlImpl, ITunnelsConfCtrl>()
+      .AddModule<PreferencesStorageImpl, IPreferencesStorage>()
+      .AddModule<PagesControllerImpl, IPagesController>()
+      .ActivateOnStart<IUdpTunnelCtrl>()
       .Build();
 
     logger.Info($"Dependencies are installed");
-
-    Container = containerBuilder.ServiceProvider;
 
     var builder = MauiApp.CreateBuilder();
     builder
@@ -73,7 +80,7 @@ public static class MauiProgram
   }
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-  public static IInjectionScope Container { get; private set; }
+  public static IReadOnlyDependencyContainer Container { get; private set; }
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 }

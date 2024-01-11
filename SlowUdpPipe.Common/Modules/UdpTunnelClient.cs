@@ -1,14 +1,13 @@
-﻿using Ax.Fw.Crypto;
-using Ax.Fw.Extensions;
+﻿using Ax.Fw.Extensions;
 using Ax.Fw.SharedTypes.Interfaces;
 using JustLogger.Interfaces;
 using SlowUdpPipe.Common.Data;
+using SlowUdpPipe.Common.Toolkit;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Text;
 
 namespace SlowUdpPipe.Common.Modules;
 
@@ -101,7 +100,7 @@ public class UdpTunnelClient
     Span<byte> buffer = new byte[128 * 1024];
     EndPoint localServiceEndpoint = new IPEndPoint(IPAddress.Any, short.MaxValue);
     var remoteEndPoint = p_options.Remote;
-    var cryptor = GetCrypto(_lifetime);
+    var cryptor = EncryptionToolkit.GetCrypto(p_options.Cipher, _lifetime, p_options.Key);
 
     p_logger.Info($"Local service socket routine is started");
 
@@ -154,7 +153,7 @@ public class UdpTunnelClient
   {
     Span<byte> buffer = new byte[128 * 1024];
     EndPoint _ = new IPEndPoint(IPAddress.Any, short.MaxValue);
-    var cryptor = GetCrypto(_lifetime);
+    var cryptor = EncryptionToolkit.GetCrypto(p_options.Cipher, _lifetime, p_options.Key);
 
     p_logger.Info($"[{_localServiceEndpoint}] Remote server socket routine is started");
 
@@ -213,22 +212,6 @@ public class UdpTunnelClient
     }
 
     throw new OperationCanceledException();
-  }
-
-  private ICryptoAlgorithm GetCrypto(IReadOnlyLifetime _lifetime)
-  {
-    return p_options.Cipher switch
-    {
-      EncryptionAlgorithm.Aes128 => new AesCbc(_lifetime, p_options.Key, 128),
-      EncryptionAlgorithm.Aes256 => new AesCbc(_lifetime, p_options.Key, 256),
-      EncryptionAlgorithm.AesGcm128 => new AesWithGcm(_lifetime, p_options.Key, 128),
-      EncryptionAlgorithm.AesGcm256 => new AesWithGcm(_lifetime, p_options.Key, 256),
-      EncryptionAlgorithm.AesGcmObfs128 => new AesWithGcmObfs(_lifetime, p_options.Key, Consts.MAX_UDP_PACKET_PAYLOAD_SIZE, 128),
-      EncryptionAlgorithm.AesGcmObfs256 => new AesWithGcmObfs(_lifetime, p_options.Key, Consts.MAX_UDP_PACKET_PAYLOAD_SIZE, 256),
-      EncryptionAlgorithm.ChaCha20Poly1305 => new ChaCha20WithPoly1305(_lifetime, p_options.Key),
-      EncryptionAlgorithm.Xor => new Xor(Encoding.UTF8.GetBytes(p_options.Key)),
-      _ => throw new InvalidOperationException($"Crypto algorithm is not specified!"),
-    };
   }
 
 }

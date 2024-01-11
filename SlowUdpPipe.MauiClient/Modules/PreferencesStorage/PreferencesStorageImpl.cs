@@ -1,5 +1,5 @@
-﻿using Ax.Fw.Attributes;
-using Ax.Fw.Cache;
+﻿using Ax.Fw.Cache;
+using Ax.Fw.DependencyInjection;
 using Ax.Fw.Extensions;
 using JustLogger.Interfaces;
 using SlowUdpPipe.Common.Data;
@@ -11,9 +11,13 @@ using static SlowUdpPipe.MauiClient.Data.AppConsts;
 
 namespace SlowUdpPipe.MauiClient.Modules.PreferencesStorage;
 
-[ExportClass(typeof(IPreferencesStorage), Singleton: true)]
-internal class PreferencesStorageImpl : IPreferencesStorage
+internal class PreferencesStorageImpl : IPreferencesStorage, IAppModule<PreferencesStorageImpl>
 {
+  public static PreferencesStorageImpl ExportInstance(IAppDependencyCtx _ctx)
+  {
+    return _ctx.CreateInstance((ILogger _logger, ITunnelsConfCtrl _tunnelsConfCtrl) => new PreferencesStorageImpl(_logger, _tunnelsConfCtrl));
+  }
+
   private const string DEPRECATED_PREF_DB_LOCAL = "settings.local";
   private const string DEPRECATED_PREF_DB_REMOTE = "settings.remote";
   private const string DEPRECATED_PREF_DB_CIPHER = "settings.cipher";

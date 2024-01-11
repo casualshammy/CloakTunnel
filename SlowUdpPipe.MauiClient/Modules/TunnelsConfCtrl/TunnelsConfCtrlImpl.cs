@@ -1,7 +1,9 @@
 ﻿using Ax.Fw.Attributes;
+using Ax.Fw.DependencyInjection;
 using Ax.Fw.JsonStorages;
 using Ax.Fw.SharedTypes.Interfaces;
 using SlowUdpPipe.Common.Data;
+using SlowUdpPipe.Common.Toolkit;
 using SlowUdpPipe.MauiClient.Data;
 using SlowUdpPipe.MauiClient.Interfaces;
 using SlowUdpPipe.MauiClient.ViewModels;
@@ -12,9 +14,13 @@ using System.Text.Json.Serialization;
 
 namespace SlowUdpPipe.MauiClient.Modules.TunnelsConfCtrl;
 
-[ExportClass(typeof(ITunnelsConfCtrl), Singleton: true)]
-public class TunnelsConfCtrlImpl : ITunnelsConfCtrl
+public class TunnelsConfCtrlImpl : ITunnelsConfCtrl, IAppModule<TunnelsConfCtrlImpl>
 {
+  public static TunnelsConfCtrlImpl ExportInstance(IAppDependencyCtx _ctx)
+  {
+    return _ctx.CreateInstance((IReadOnlyLifetime _lifetime) => new TunnelsConfCtrlImpl(_lifetime));
+  }
+
   private readonly ConcurrentDictionary<Guid, TunnelsConfEntry> p_tunnels;
   private readonly JsonStorage<ConcurrentDictionary<Guid, TunnelsConfEntry>> p_storage;
   private readonly ReplaySubject<ICollection<TunnelsConfEntry>> p_confsSubj = new(1);
@@ -108,7 +114,7 @@ public class TunnelsConfCtrlImpl : ITunnelsConfCtrl
       _model.Name,
       _model.LocalAddress,
       _model.RemoteAddress,
-      Common.Data.Consts.ENCRYPTION_ALG_SLUG_REVERSE[_model.EncryptionAlgo],
+      EncryptionToolkit.ENCRYPTION_ALG_SLUG_REVERSE[_model.EncryptionAlgo],
       _model.Key,
       _model.Enabled);
 

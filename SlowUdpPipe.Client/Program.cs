@@ -7,6 +7,7 @@ using JustLogger.Interfaces;
 using SlowUdpPipe.Client.Data;
 using SlowUdpPipe.Client.Interfaces;
 using SlowUdpPipe.Client.Modules.SettingsProvider;
+using SlowUdpPipe.Client.Modules.UdpProxy;
 using SlowUdpPipe.Common.Toolkit;
 using System.Reflection;
 
@@ -67,22 +68,18 @@ public class Program
     logger.Info($"OS: {Environment.OSVersion} {(Environment.Is64BitOperatingSystem ? "x64" : "x86")}");
     logger.Info($"-------------------------------------------");
 
-    var depMgr = DependencyManagerBuilder
-      .Create(lifetime, assembly)
+    _ = AppDependencyManager
+      .Create()
+      .AddSingleton<IReadOnlyLifetime>(lifetime)
+      .AddSingleton<ILifetime>(lifetime)
       .AddSingleton<ILogger>(logger)
       .AddSingleton<ILoggerDisposable>(logger)
-      .AddSingleton<ILifetime>(lifetime)
-      .AddSingleton<IReadOnlyLifetime>(lifetime)
       .AddSingleton<ISettingsProvider>(settingsProvider)
+      .AddModule<UdpProxyImpl>()
+      .ActivateOnStart<UdpProxyImpl>()
       .Build();
 
-    void onCancelKeyPress(object? _o, ConsoleCancelEventArgs _e)
-    {
-      _e.Cancel = true;
-      Console.CancelKeyPress -= onCancelKeyPress;
-      lifetime.End();
-    }
-    Console.CancelKeyPress += onCancelKeyPress;
+    lifetime.InstallConsoleCtrlCHook();
 
     try
     {

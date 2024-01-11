@@ -1,8 +1,8 @@
-﻿using Grace.DependencyInjection;
+﻿using Ax.Fw.SharedTypes.Interfaces;
 
 namespace SlowUdpPipe.MauiClient.Interfaces;
 
 public interface IMauiApp
 {
-  IInjectionScope Container { get; }
+  IReadOnlyDependencyContainer Container { get; }
 }

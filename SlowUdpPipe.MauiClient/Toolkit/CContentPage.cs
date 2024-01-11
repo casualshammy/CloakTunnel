@@ -1,4 +1,4 @@
-﻿using Grace.DependencyInjection;
+﻿using Ax.Fw.SharedTypes.Interfaces;
 using SlowUdpPipe.MauiClient.Interfaces;
 
 namespace SlowUdpPipe.MauiClient.Toolkit;
@@ -11,11 +11,9 @@ public abstract class CContentPage : ContentPage
   {
     Container = MauiProgram.Container;
     p_pageController = Container.Locate<IPagesController>();
-
-    Container.Inject(this);
   }
 
-  public IInjectionScope Container { get; }
+  public IReadOnlyDependencyContainer Container { get; }
 
   protected override void OnAppearing()
   {

@@ -1,4 +1,4 @@
-﻿using Ax.Fw.Attributes;
+﻿using Ax.Fw.DependencyInjection;
 using Ax.Fw.Extensions;
 using Ax.Fw.SharedTypes.Interfaces;
 using JustLogger.Interfaces;
@@ -6,16 +6,27 @@ using SlowUdpPipe.Client.Data;
 using SlowUdpPipe.Client.Interfaces;
 using SlowUdpPipe.Common.Data;
 using SlowUdpPipe.Common.Modules;
+using SlowUdpPipe.Common.Toolkit;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 
 namespace SlowUdpPipe.Client.Modules.UdpProxy;
 
-[ExportClass(typeof(UdpProxyImpl), Singleton: true, ActivateOnStart: true)]
-internal class UdpProxyImpl
+internal class UdpProxyImpl : IAppModule<UdpProxyImpl>
 {
   private readonly ILogger p_logger;
   private int p_clientCounter = -1;
+
+  public static UdpProxyImpl ExportInstance(IAppDependencyCtx _ctx)
+  {
+    var instance = _ctx.CreateInstance<ISettingsProvider, IReadOnlyLifetime, ILogger, UdpProxyImpl>(
+      (_settingsProvider, _lifetime, _logger) =>
+      {
+        return new UdpProxyImpl(_settingsProvider, _lifetime, _logger);
+      });
+
+    return instance;
+  }
 
   public UdpProxyImpl(
     ISettingsProvider _settingsProvider,
@@ -41,7 +52,7 @@ internal class UdpProxyImpl
           var opt = new UdpTunnelClientOptions(remote, local, algorithm.Value, key);
           var clientIndex = Interlocked.Increment(ref p_clientCounter);
           var logger = _logger[$"{clientIndex}-{defSlug}"];
-          var algoSlug = Consts.ENCRYPTION_ALG_SLUG[opt.Cipher];
+          var algoSlug = EncryptionToolkit.ENCRYPTION_ALG_SLUG[opt.Cipher];
 
           logger.Warn($"Launching udp tunnel L:{opt.Local} > R:{opt.Remote}; algorithm: {algoSlug}...");
           _ = new UdpTunnelClient(opt, _life, logger);
@@ -85,15 +96,14 @@ internal class UdpProxyImpl
     }
 
     if (_options.Cipher == null)
-      _algorithm = Consts.DEFAULT_ENCRYPTION;
-    else if (Consts.ENCRYPTION_ALG_SLUG_REVERSE.TryGetValue(_options.Cipher, out var algo))
+      _algorithm = EncryptionToolkit.DEFAULT_ENCRYPTION;
+    else if (EncryptionToolkit.ENCRYPTION_ALG_SLUG_REVERSE.TryGetValue(_options.Cipher, out var algo))
       _algorithm = algo;
     else
     {
       p_logger.Error($"Definition '{_defSlug}' has unknown encription algorithm '{_options.Cipher}'! Please refer to documentation");
       return false;
     }
-
 
     _remote = remote;
     _local = local;

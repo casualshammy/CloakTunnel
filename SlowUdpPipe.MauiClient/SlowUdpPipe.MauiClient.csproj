@@ -24,6 +24,9 @@
 				<AndroidSigningKeyStore>slowudppipe.keystore</AndroidSigningKeyStore>
 				<AndroidSigningKeyAlias>slowudppipe</AndroidSigningKeyAlias>
 		</PropertyGroup>
+		<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-android|AnyCPU'">
+		  <EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
+		</PropertyGroup>
 
 		<ItemGroup>
 				<PackageReference Include="CommunityToolkit.Maui" Version="[2.0.0]" />

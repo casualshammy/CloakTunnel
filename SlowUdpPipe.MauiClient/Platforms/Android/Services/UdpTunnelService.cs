@@ -1,31 +1,24 @@
-﻿using Android;
-using Android.App;
+﻿using Android.App;
 using Android.Content;
 using Android.OS;
 using Android.Runtime;
 using Android.Widget;
 using AndroidX.Core.App;
-using Ax.Fw.Attributes;
+using Ax.Fw.DependencyInjection;
 using Ax.Fw.Extensions;
 using Ax.Fw.SharedTypes.Interfaces;
-using Grace.DependencyInjection.Attributes;
 using SlowUdpPipe.Common.Toolkit;
 using SlowUdpPipe.MauiClient.Data;
 using SlowUdpPipe.MauiClient.Interfaces;
-using SlowUdpPipe.MauiClient.Toolkit;
-using System;
-using System.Collections.Concurrent;
 using System.Reactive.Linq;
-using System.Runtime.Intrinsics.X86;
-using static Android.Icu.Text.CaseMap;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace SlowUdpPipe.MauiClient.Platforms.Android.Services;
 
 [Service(ForegroundServiceType = global::Android.Content.PM.ForegroundService.TypeDataSync)]
-[ExportClass(typeof(IUdpTunnelService), Singleton: true)]
-public class UdpTunnelService : CAndroidService, IUdpTunnelService
+public class UdpTunnelService : global::Android.App.Service, IUdpTunnelService, IAppModule<UdpTunnelService>
 {
+  public static UdpTunnelService ExportInstance(IAppDependencyCtx _ctx) => new();
+
   private const string SERVICE_NOTIFICATION_CHANNEL = "ServiceChannel";
   private const string GENERAL_NOTIFICATION_CHANNEL = "GeneralChannel";
   private const string STOP_TUNNEL_ID_ACTION_EXTRA = "tunnel-id";
@@ -33,25 +26,21 @@ public class UdpTunnelService : CAndroidService, IUdpTunnelService
   private const int BATTERY_OPTIMIZATION_NOTIFICATION_ID = 200;
   private const int REQUEST_POST_NOTIFICATIONS = 1000;
   private readonly NotificationManager p_notificationManager;
-  private ILifetime? p_lifetime;
+  private readonly IReadOnlyLifetime p_lifetime;
+  private readonly IUdpTunnelCtrl p_udpTunnelCtrl;
+  private readonly ITunnelsConfCtrl p_tunnelsConfCtrl;
+  private ILifetime? p_serviceLifetime;
   private bool p_batteryOptimizationWarnDisplayed = false;
 
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
   public UdpTunnelService()
   {
     var context = global::Android.App.Application.Context;
     p_notificationManager = (NotificationManager)context.GetSystemService(NotificationService)!;
+
+    p_lifetime = MauiProgram.Container.Locate<IReadOnlyLifetime>();
+    p_udpTunnelCtrl = MauiProgram.Container.Locate<IUdpTunnelCtrl>();
+    p_tunnelsConfCtrl = MauiProgram.Container.Locate<ITunnelsConfCtrl>();
   }
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-
-  [Import]
-  public IReadOnlyLifetime Lifetime { get; init; }
-
-  [Import]
-  public IUdpTunnelCtrl UdpTunnelCtrl { get; init; }
-
-  [Import]
-  public ITunnelsConfCtrl TunnelsConfCtrl { get; init; }
 
   public override IBinder OnBind(Intent? _intent) => throw new NotImplementedException();
 
@@ -63,11 +52,11 @@ public class UdpTunnelService : CAndroidService, IUdpTunnelService
   {
     if (_intent?.Action == "START_SERVICE")
     {
-      p_lifetime = Lifetime.GetChildLifetime();
-      if (p_lifetime == null)
+      p_serviceLifetime = p_lifetime.GetChildLifetime();
+      if (p_serviceLifetime == null)
         return StartCommandResult.NotSticky;
 
-      var notification = BuildOrUpdateServiceNotification(Array.Empty<TunnelStatWithName>(), true, p_lifetime.Token);
+      var notification = BuildOrUpdateServiceNotification(Array.Empty<TunnelStatWithName>(), true, p_serviceLifetime.Token);
 
       if (Build.VERSION.SdkInt >= BuildVersionCodes.Q)
 #pragma warning disable CA1416 // Validate platform compatibility
@@ -76,9 +65,9 @@ public class UdpTunnelService : CAndroidService, IUdpTunnelService
       else
         StartForeground(SERVICE_NOTIFICATION_ID, notification);
 
-      UdpTunnelCtrl.TunnelsStats
+      p_udpTunnelCtrl.TunnelsStats
         .Buffer(TimeSpan.FromSeconds(3))
-        .Merge(UdpTunnelCtrl.TunnelsStats.Take(1).ToList())
+        .Merge(p_udpTunnelCtrl.TunnelsStats.Take(1).ToList())
         .Subscribe(_list =>
         {
           if (!_list.Any())
@@ -95,10 +84,10 @@ public class UdpTunnelService : CAndroidService, IUdpTunnelService
             listAvg.Add(new TunnelStatWithName(tunnel.TunnelGuid, tunnel.TunnelName, (ulong)txAvg, (ulong)rxAvg));
           }
 
-          BuildOrUpdateServiceNotification(listAvg, false, p_lifetime.Token);
-        }, p_lifetime);
+          BuildOrUpdateServiceNotification(listAvg, false, p_serviceLifetime.Token);
+        }, p_serviceLifetime);
 
-      p_lifetime.DoOnEnding(() =>
+      p_serviceLifetime.DoOnEnding(() =>
       {
         StopForeground(StopForegroundFlags.Remove);
         StopSelfResult(_startId);
@@ -110,15 +99,7 @@ public class UdpTunnelService : CAndroidService, IUdpTunnelService
     }
     else if (_intent?.Action == "STOP_SERVICE")
     {
-      p_lifetime?.Dispose();
-    }
-    else if (_intent?.Action == "STOP_SERVICE_INFORM_TUNNEL_CTRL")
-    {
-      var tunnelGuid = _intent?.GetStringExtra(STOP_TUNNEL_ID_ACTION_EXTRA);
-      if (tunnelGuid.IsNullOrWhiteSpace() || !Guid.TryParse(tunnelGuid, out var guid))
-        return StartCommandResult.NotSticky;
-
-      TunnelsConfCtrl?.DisableTunnel(guid);
+      p_serviceLifetime?.Dispose();
     }
 
     return StartCommandResult.NotSticky;
@@ -160,17 +141,8 @@ public class UdpTunnelService : CAndroidService, IUdpTunnelService
 
     var title = $"{_tunnels.Count} tunnels is up";
     var text = string.Empty;
-    //var actions = new List<Notification.Action>();
     foreach (var tunnel in _tunnels)
-    {
       text += $"{tunnel.TunnelName}:\n\tRx: {Converters.BytesPerSecondToString(tunnel.RxBytePerSecond)}; Tx: {Converters.BytesPerSecondToString(tunnel.TxBytePerSecond)}\n";
-      //var stopIntent = new Intent(context, Class);
-      //stopIntent.PutExtra(STOP_TUNNEL_ID_ACTION_EXTRA, tunnel.TunnelGuid.ToString());
-      //stopIntent.SetAction("STOP_SERVICE_INFORM_TUNNEL_CTRL");
-      //var stopServiceIntent = PendingIntent.GetService(context, 0, stopIntent, PendingIntentFlags.Mutable | PendingIntentFlags.UpdateCurrent);
-      //var action = new Notification.Action(Resource.Drawable.infinity, $"Stop {tunnel.TunnelName}", stopServiceIntent);
-      //actions.Add(action);
-    }
 
     var layoutSmall = new RemoteViews(context.PackageName, Resource.Layout.notification_small);
     layoutSmall.SetTextViewText(Resource.Id.notification_small_title, title);
@@ -184,7 +156,6 @@ public class UdpTunnelService : CAndroidService, IUdpTunnelService
      .SetSmallIcon(Resource.Drawable.infinity)
      .SetOnlyAlertOnce(true)
      .SetOngoing(true)
-     //.SetActions(actions.ToArray())
      .SetStyle(new Notification.DecoratedCustomViewStyle())
      .SetCustomContentView(layoutSmall)
      .SetCustomBigContentView(layoutLarge)
