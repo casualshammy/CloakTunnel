@@ -1,6 +1,7 @@
 import os
 import re
 import shutil
+from build_common import utils
 import build_common.packages
 import build_common.git as git
 import argparse
@@ -65,3 +66,5 @@ print(f"Done!", flush=True)
 print(f"===========================================", flush=True)
 
 git.create_tag_and_push(version)
+utils.callThrowIfError("git stash", True)
+git.merge("main", git.get_current_branch_name(), True, "casualshammy", True)
