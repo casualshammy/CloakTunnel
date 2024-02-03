@@ -93,6 +93,13 @@ public class UdpTunnelClient
 
   public IObservable<UdpTunnelStat> Stats => p_stats;
 
+  public void DropAllClients()
+  {
+    foreach (var (endPoint, _) in p_clients)
+      if (p_clients.TryRemove(endPoint, out var removedClientInfo))
+        removedClientInfo.Lifetime.End();
+  }
+
   private void CreateLocalServiceRoutine(
     Socket _localServiceSocket,
     IReadOnlyLifetime _lifetime)
@@ -124,7 +131,11 @@ public class UdpTunnelClient
           Interlocked.Add(ref p_byteSentCount, (ulong)dataToSend.Length);
         }
       }
-      catch (SocketException sex0) when (sex0.ErrorCode == 10004) // Interrupted function call
+      catch (SocketException sex) when (sex.ErrorCode == 10051) // Network unavailable
+      {
+        p_logger.Warn($"Can't connect to server: host unreachable");
+      }
+      catch (SocketException sex0) when (sex0.ErrorCode == 10004 || sex0.ErrorCode == 4) // Interrupted function call
       {
         // ignore (caused by client disconnection)
       }

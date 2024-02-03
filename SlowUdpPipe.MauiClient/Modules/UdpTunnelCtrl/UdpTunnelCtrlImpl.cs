@@ -21,6 +21,11 @@ internal class UdpTunnelCtrlImpl : IUdpTunnelCtrl, IAppModule<UdpTunnelCtrlImpl>
     return _ctx.CreateInstance((IReadOnlyLifetime _lifetime, ILogger _logger, ITunnelsConfCtrl _tunnelsConfCtrl) => new UdpTunnelCtrlImpl(_lifetime, _logger, _tunnelsConfCtrl));
   }
 
+  readonly record struct TunnelTrafficWatchdogData(long LastReceivedTrafficMs, long LastSentTrafficMs)
+  {
+    public static TunnelTrafficWatchdogData Empty { get; } = new TunnelTrafficWatchdogData(0L, 0L);
+  };
+
   private readonly ILogger p_log;
   private readonly Subject<TunnelStatWithName> p_statsSubj = new();
 
@@ -79,6 +84,27 @@ internal class UdpTunnelCtrlImpl : IUdpTunnelCtrl, IAppModule<UdpTunnelCtrlImpl>
           var options = new UdpTunnelClientOptions(remoteEndpoint, localEndpoint, encryption, key);
           var tunnel = new UdpTunnelClient(options, _life, log);
           tunnel.Stats.Subscribe(_ => p_statsSubj.OnNext(new TunnelStatWithName(conf.Guid, conf.Name, _.TxBytePerSecond, _.RxBytePerSecond)), _life);
+
+          // handle cases then there is not received traffic
+          tunnel.Stats
+            .Scan(TunnelTrafficWatchdogData.Empty, (_acc, _trafficData) =>
+            {
+              var now = Environment.TickCount64;
+              var txTimeMs = _trafficData.TxBytePerSecond > 0 ? now : _acc.LastSentTrafficMs;
+              var rxTimeMs = _trafficData.RxBytePerSecond > 0 ? now : _acc.LastReceivedTrafficMs;
+
+              if (txTimeMs - rxTimeMs > 30 * 1000) // we have send something, 30 sec passed, but there is no incoming traffic
+              {
+                log.Warn($"Looks like outgoing stream is stuck, resetting tunnel...");
+                tunnel.DropAllClients();
+                log.Warn($"Tunnel is reset");
+                return new TunnelTrafficWatchdogData(now, now);
+              }
+
+              return new TunnelTrafficWatchdogData(rxTimeMs, txTimeMs);
+            })
+            .Subscribe(_life);
+
           ++activeTunnels;
         }
 

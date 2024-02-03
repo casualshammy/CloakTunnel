@@ -46,7 +46,7 @@ public static class MauiProgram
 
     lifetime.ToDisposeOnEnded(FileLoggerCleaner.Create(new DirectoryInfo(logsFolder), false, new Regex(@"^.+\.log$"), TimeSpan.FromDays(30), null, _file =>
     {
-      logger.Info($"Old file was removed: '{_file.Name}'");
+      logger.Info($"Old log file was removed: '{_file.Name}'");
     }));
 
     Container = AppDependencyManager
