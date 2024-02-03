@@ -133,23 +133,25 @@ public class UdpTunnelClient
       }
       catch (SocketException sex) when (sex.ErrorCode == 10051) // Network unavailable
       {
-        p_logger.Warn($"Can't connect to server: host unreachable");
+        p_logger.Warn($"Local: host unreachable (code: {sex.ErrorCode}");
       }
-      catch (SocketException sex0) when (sex0.ErrorCode == 10004 || sex0.ErrorCode == 4) // Interrupted function call
+      catch (SocketException sex) when (sex.ErrorCode == 10004 || sex.ErrorCode == 4) // Interrupted function call
       {
         // ignore (caused by client disconnection)
+        p_logger.Warn($"Local: interrupted function call (code: {sex.ErrorCode}");
       }
-      catch (SocketException sex1) when (sex1.ErrorCode == 10054) // Connection reset by peer.
+      catch (SocketException sex) when (sex.ErrorCode == 10054) // Connection reset by peer.
       {
         // ignore (caused by client disconnection)
+        p_logger.Warn($"Local: connection reset by peer (code: {sex.ErrorCode}");
       }
-      catch (SocketException sexi)
+      catch (SocketException sex)
       {
-        p_logger.Error($"Local interface SocketException error; code: '{sexi.ErrorCode}'", sexi);
+        p_logger.Error($"Local: SocketException error (code: {sex.ErrorCode})", sex);
       }
       catch (Exception ex)
       {
-        p_logger.Error("Local interface error", ex);
+        p_logger.Error("Local: generic error", ex);
       }
     }
 
@@ -189,14 +191,15 @@ public class UdpTunnelClient
       catch (SocketException sex0) when (sex0.ErrorCode == 10004) // Interrupted function call
       {
         // ignore (caused be client cleanup)
+        p_logger.Warn($"Remote: interrupted function call (code: {sex0.ErrorCode})");
       }
       catch (SocketException sex1) when (sex1.ErrorCode == 10054) // Connection reset by peer
       {
-        p_logger.Error($"Remote host is not responding");
+        p_logger.Error($"Remote: host is not responding");
       }
       catch (Exception ex)
       {
-        p_logger.Error("Remote interface error", ex);
+        p_logger.Error("Remote: generic error", ex);
       }
     }
 

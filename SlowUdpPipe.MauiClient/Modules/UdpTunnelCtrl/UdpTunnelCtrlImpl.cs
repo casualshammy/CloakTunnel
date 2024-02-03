@@ -93,7 +93,7 @@ internal class UdpTunnelCtrlImpl : IUdpTunnelCtrl, IAppModule<UdpTunnelCtrlImpl>
               var txTimeMs = _trafficData.TxBytePerSecond > 0 ? now : _acc.LastSentTrafficMs;
               var rxTimeMs = _trafficData.RxBytePerSecond > 0 ? now : _acc.LastReceivedTrafficMs;
 
-              if (txTimeMs - rxTimeMs > 30 * 1000) // we have send something, 30 sec passed, but there is no incoming traffic
+              if (txTimeMs - rxTimeMs > 30 * 1000)
               {
                 log.Warn($"Looks like outgoing stream is stuck, resetting tunnel...");
                 tunnel.DropAllClients();

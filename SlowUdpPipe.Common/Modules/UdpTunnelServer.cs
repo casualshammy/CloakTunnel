@@ -147,21 +147,23 @@ public class UdpTunnelServer
           client.Socket.SendTo(dataToSend, SocketFlags.None, remoteEndpoint);
         }
       }
-      catch (SocketException sex0) when (sex0.ErrorCode == 10004 || sex0.ErrorCode == 4) // Interrupted function call
+      catch (SocketException sex) when (sex.ErrorCode == 10004 || sex.ErrorCode == 4) // Interrupted function call
       {
         // ignore (caused be client cleanup)
+        p_logger.Warn($"[{remoteClientEndpoint}] Remote client: interrupted function call (code: {sex.ErrorCode}");
       }
       catch (SocketException sex) when (sex.ErrorCode == 10054) // Connection reset by peer.
       {
         // ignore (caused by client disconnection)
+        p_logger.Warn($"[{remoteClientEndpoint}] Remote client: connection reset by peer (code: {sex.ErrorCode}");
       }
       catch (SocketException sexi)
       {
-        p_logger.Error($"Accept clients listener SocketException error; code: '{sexi.ErrorCode}'", sexi);
+        p_logger.Error($"[{remoteClientEndpoint}] Remote client: SocketException error; code: '{sexi.ErrorCode}'", sexi);
       }
       catch (Exception ex)
       {
-        p_logger.Error("Accept clients listener error", ex);
+        p_logger.Error($"[{remoteClientEndpoint}] Remote client: generic error", ex);
       }
     }
 
@@ -202,14 +204,15 @@ public class UdpTunnelServer
       catch (SocketException sex) when (sex.ErrorCode == 10004 || sex.ErrorCode == 4) // Interrupted function call
       {
         // ignore (caused by client cleanup)
+        p_logger.Warn($"[{_remoteClientEndpoint}] Local service: interrupted function call (code: {sex.ErrorCode}");
       }
-      catch (SocketException sexi)
+      catch (SocketException sex)
       {
-        p_logger.Error($"Local service tunnel SocketException error; code: '{sexi.ErrorCode}'", sexi);
+        p_logger.Error($"[{_remoteClientEndpoint}] Local service: SocketException error; code: '{sex.ErrorCode}'", sex);
       }
       catch (Exception ex)
       {
-        p_logger.Error("Local service tunnel error", ex);
+        p_logger.Error($"[{_remoteClientEndpoint}] Local service: generic error", ex);
       }
     }
 
