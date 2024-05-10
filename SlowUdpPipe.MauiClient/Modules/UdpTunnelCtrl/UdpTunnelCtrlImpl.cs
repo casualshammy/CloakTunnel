@@ -21,10 +21,10 @@ internal class UdpTunnelCtrlImpl : IUdpTunnelCtrl, IAppModule<UdpTunnelCtrlImpl>
     return _ctx.CreateInstance((IReadOnlyLifetime _lifetime, ILogger _logger, ITunnelsConfCtrl _tunnelsConfCtrl) => new UdpTunnelCtrlImpl(_lifetime, _logger, _tunnelsConfCtrl));
   }
 
-  readonly record struct TunnelTrafficWatchdogData(long LastReceivedTrafficMs, long LastSentTrafficMs)
-  {
-    public static TunnelTrafficWatchdogData Empty { get; } = new TunnelTrafficWatchdogData(0L, 0L);
-  };
+  //readonly record struct TunnelTrafficWatchdogData(long LastReceivedTrafficMs, long LastSentTrafficMs)
+  //{
+  //  public static TunnelTrafficWatchdogData Empty { get; } = new TunnelTrafficWatchdogData(0L, 0L);
+  //};
 
   private readonly ILogger p_log;
   private readonly Subject<TunnelStatWithName> p_statsSubj = new();
@@ -87,23 +87,43 @@ internal class UdpTunnelCtrlImpl : IUdpTunnelCtrl, IAppModule<UdpTunnelCtrlImpl>
 
           // handle cases then there is not received traffic
           tunnel.Stats
-            .Scan(TunnelTrafficWatchdogData.Empty, (_acc, _trafficData) =>
+            .Buffer(TimeSpan.FromSeconds(30))
+            .Subscribe(_list =>
             {
-              var now = Environment.TickCount64;
-              var txTimeMs = _trafficData.TxBytePerSecond > 0 ? now : _acc.LastSentTrafficMs;
-              var rxTimeMs = _trafficData.RxBytePerSecond > 0 ? now : _acc.LastReceivedTrafficMs;
+              if (_list.Count == 0)
+                return;
 
-              if (txTimeMs - rxTimeMs > 30 * 1000)
+              var totalRx = _list.Sum(_ => (float)_.RxBytePerSecond);
+              var totalTx = _list.Sum(_ => (float)_.TxBytePerSecond);
+
+              if (totalTx > 0 && totalRx == 0)
               {
-                log.Warn($"Looks like outgoing stream is stuck, resetting tunnel...");
+                log.Warn($"Looks like incoming stream is stuck, resetting tunnel...");
                 tunnel.DropAllClients();
                 log.Warn($"Tunnel is reset");
-                return new TunnelTrafficWatchdogData(now, now);
               }
+            }, _life);
 
-              return new TunnelTrafficWatchdogData(rxTimeMs, txTimeMs);
-            })
-            .Subscribe(_life);
+            //.Scan(TunnelTrafficWatchdogData.Empty, (_acc, _list) =>
+            //{
+            //  if (_list.Count == 0)
+            //    return ;
+
+            //  var now = Environment.TickCount64;
+            //  var txTimeMs = _trafficData.TxBytePerSecond > 0 ? now : _acc.LastSentTrafficMs;
+            //  var rxTimeMs = _trafficData.RxBytePerSecond > 0 ? now : _acc.LastReceivedTrafficMs;
+
+            //  if (txTimeMs - rxTimeMs > 30 * 1000)
+            //  {
+            //    log.Warn($"Looks like outgoing stream is stuck, resetting tunnel...");
+            //    tunnel.DropAllClients();
+            //    log.Warn($"Tunnel is reset");
+            //    return new TunnelTrafficWatchdogData(now, now);
+            //  }
+
+            //  return new TunnelTrafficWatchdogData(rxTimeMs, txTimeMs);
+            //})
+            //.Subscribe(_life);
 
           ++activeTunnels;
         }

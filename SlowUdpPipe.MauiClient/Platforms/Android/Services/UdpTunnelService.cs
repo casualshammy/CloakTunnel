@@ -76,6 +76,7 @@ public class UdpTunnelService : global::Android.App.Service, IUdpTunnelService, 
           var uniqueTunnelsEE = _list
             .DistinctBy(_ => _.TunnelGuid)
             .OrderBy(_ => _.TunnelName);
+
           var listAvg = new List<TunnelStatWithName>();
           foreach (var tunnel in uniqueTunnelsEE)
           {
@@ -143,24 +144,27 @@ public class UdpTunnelService : global::Android.App.Service, IUdpTunnelService, 
     var title = $"{_tunnels.Count} tunnels is up";
     var text = string.Empty;
     foreach (var tunnel in _tunnels)
-      text += $"{tunnel.TunnelName}:\n\tRx: {Converters.BytesPerSecondToString(tunnel.RxBytePerSecond)}; Tx: {Converters.BytesPerSecondToString(tunnel.TxBytePerSecond)}\n";
+      text += $"[{tunnel.TunnelName}] Rx: {Converters.BytesPerSecondToString(tunnel.RxBytePerSecond)}; Tx: {Converters.BytesPerSecondToString(tunnel.TxBytePerSecond)}\n";
 
-    var layoutSmall = new RemoteViews(context.PackageName, Resource.Layout.notification_small);
-    layoutSmall.SetTextViewText(Resource.Id.notification_small_title, title);
+    text = text.TrimEnd('\n');
 
-    var layoutLarge = new RemoteViews(context.PackageName, Resource.Layout.notification_large);
-    layoutLarge.SetTextViewText(Resource.Id.notification_large_title, title);
-    layoutLarge.SetTextViewText(Resource.Id.notification_large_body, text);
+    //var layoutSmall = new RemoteViews(context.PackageName, Resource.Layout.notification_small);
+    //layoutSmall.SetTextViewText(Resource.Id.notification_small_title, title);
+
+    //var layoutLarge = new RemoteViews(context.PackageName, Resource.Layout.notification_large);
+    //layoutLarge.SetTextViewText(Resource.Id.notification_large_title, title);
+    //layoutLarge.SetTextViewText(Resource.Id.notification_large_body, text);
 
     var builder = new Notification.Builder(this, SERVICE_NOTIFICATION_CHANNEL)
      .SetContentIntent(openAppIntent)
      .SetSmallIcon(Resource.Drawable.infinity)
      .SetOnlyAlertOnce(true)
      .SetOngoing(true)
-     .SetStyle(new Notification.DecoratedCustomViewStyle())
-     .SetCustomContentView(layoutSmall)
-     .SetCustomBigContentView(layoutLarge)
-     .SetContentTitle(title);
+     //.SetStyle(new Notification.DecoratedCustomViewStyle())
+     //.SetCustomContentView(layoutSmall)
+     //.SetCustomBigContentView(layoutLarge)
+     .SetContentTitle(title)
+     .SetContentText(text);
 
 #pragma warning disable CA1416 // Validate platform compatibility
     if (_firstShow && Build.VERSION.SdkInt >= BuildVersionCodes.S)

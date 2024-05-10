@@ -131,9 +131,9 @@ public class UdpTunnelClient
           Interlocked.Add(ref p_byteSentCount, (ulong)dataToSend.Length);
         }
       }
-      catch (SocketException sex) when (sex.ErrorCode == 10051) // Network unavailable
+      catch (SocketException sex) when (sex.ErrorCode == 10051 || sex.ErrorCode == 101) // Network unavailable
       {
-        p_logger.Warn($"Local: host unreachable (code: {sex.ErrorCode}");
+        p_logger.Warn($"Local: host/network unreachable (code: {sex.ErrorCode}");
       }
       catch (SocketException sex) when (sex.ErrorCode == 10004 || sex.ErrorCode == 4) // Interrupted function call
       {
@@ -190,12 +190,16 @@ public class UdpTunnelClient
       }
       catch (SocketException sex0) when (sex0.ErrorCode == 10004) // Interrupted function call
       {
-        // ignore (caused be client cleanup)
+        // ignore (caused by client cleanup)
         p_logger.Warn($"Remote: interrupted function call (code: {sex0.ErrorCode})");
       }
       catch (SocketException sex1) when (sex1.ErrorCode == 10054) // Connection reset by peer
       {
         p_logger.Error($"Remote: host is not responding");
+      }
+      catch (SocketException sex)
+      {
+        p_logger.Error($"Remote: SocketException error (code: {sex.ErrorCode})", sex);
       }
       catch (Exception ex)
       {
