@@ -17,7 +17,7 @@
 				<ApplicationVersion>29</ApplicationVersion>
 
 				<SupportedOSPlatformVersion>28</SupportedOSPlatformVersion>
-				<!--<TargetPlatformVersion>33</TargetPlatformVersion>-->
+				<TargetPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">34</TargetPlatformVersion>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Configuration)' == 'Release'">
 				<AndroidKeyStore>True</AndroidKeyStore>
