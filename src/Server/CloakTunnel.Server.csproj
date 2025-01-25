@@ -22,4 +22,13 @@
 				<ProjectReference Include="..\Common\CloakTunnel.Common.csproj" />
 		</ItemGroup>
 
+		<ItemGroup>
+		  <Content Update="local.json">
+		    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		  </Content>
+		  <Content Update="_ws-test.json">
+		    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		  </Content>
+		</ItemGroup>
+
 </Project>

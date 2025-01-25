@@ -87,7 +87,7 @@ public class Program
 
     var version = new SerializableVersion(assembly.GetName().Version ?? new Version(0, 0, 0, 0));
     logger.Info($"-------------------------------------------");
-    logger.Info($"SlowUdpPipe Server Started");
+    logger.Info($"CloakTunnel Server Started");
     logger.Info($"Version: {version}");
     logger.Info($"OS: {Environment.OSVersion} {(Environment.Is64BitOperatingSystem ? "x64" : "x86")}");
     logger.Info($"-------------------------------------------");
