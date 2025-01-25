@@ -8,7 +8,6 @@ using CloakTunnel.Common.Interfaces;
 using CloakTunnel.MauiClient.Data;
 using CloakTunnel.MauiClient.Interfaces;
 using CloakTunnel.MauiClient.Platforms.Android.Services;
-using System.Net;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;

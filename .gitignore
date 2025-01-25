@@ -11,10 +11,6 @@
 /src/MauiClient/Properties/launchSettings.json
 /src/Server/Properties/launchSettings.json
 /src/Client/CloakTunnel.Client.csproj.user
-/src/Client/local.json
-/src/Server/local.json
-/src/Client/_ws-test.json
-/src/Server/_ws-test.json
 /src/Server/CloakTunnel.Server.csproj.user
 /src/MauiClient/CloakTunnel.MauiClient.csproj.user
 /src/MauiClient/_build.bat
