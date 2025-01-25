@@ -6,8 +6,8 @@ from build_common import packages
 from build_common import git
 import argparse
 
-sourceDirNameServer = "SlowUdpPipe.Server"
-sourceDirNameClient = "SlowUdpPipe.Client"
+sourceDirNameServer = "src/Server"
+sourceDirNameClient = "src/Client"
 
 argParser = argparse.ArgumentParser()
 argParser.add_argument('--platform', type=str, default= "win-x64", required=False, help='Target platfrom of server')

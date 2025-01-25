@@ -9,6 +9,7 @@ using CloakTunnel.MauiClient.Data;
 using CloakTunnel.MauiClient.Interfaces;
 using CloakTunnel.MauiClient.Platforms.Android.Services;
 using System.Net;
+using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 
@@ -21,13 +22,8 @@ internal class TunnelsControllerImpl : IUdpTunnelCtrl, IAppModule<IUdpTunnelCtrl
     return _ctx.CreateInstance((
       IReadOnlyLifetime _lifetime,
       ILog _logger,
-      ITunnelsConfCtrl _tunnelsConfCtrl) => new TunnelsControllerImpl(_lifetime, _logger, _tunnelsConfCtrl));
+      ITunnelsConfCtrl _tunnelsConfCtrl) => new TunnelsControllerImpl(_lifetime, _logger["tunnel-ctrl"], _tunnelsConfCtrl));
   }
-
-  //readonly record struct TunnelTrafficWatchdogData(long LastReceivedTrafficMs, long LastSentTrafficMs)
-  //{
-  //  public static TunnelTrafficWatchdogData Empty { get; } = new TunnelTrafficWatchdogData(0L, 0L);
-  //};
 
   private readonly ILog p_log;
   private readonly Subject<TunnelStatWithName> p_statsSubj = new();
@@ -37,12 +33,14 @@ internal class TunnelsControllerImpl : IUdpTunnelCtrl, IAppModule<IUdpTunnelCtrl
     ILog _logger,
     ITunnelsConfCtrl _tunnelsConfCtrl)
   {
-    p_log = _logger["udp-tunnel-ctrl"];
+    p_log = _logger;
     var instanceCounter = -1;
+
+    var scheduler = new EventLoopScheduler();
 
     _tunnelsConfCtrl.TunnelsConf
       .Throttle(TimeSpan.FromSeconds(3))
-      .HotAlive(_lifetime, (_confs, _life) =>
+      .HotAlive(_lifetime, scheduler, (_confs, _life) =>
       {
         if (_confs == null)
           return;
