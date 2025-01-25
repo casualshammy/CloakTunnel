@@ -77,3 +77,5 @@ print(f"Done! Client package file is '{pkgFileClient}'", flush=True)
 print(f"===========================================", flush=True)
 
 git.create_tag_and_push(version, "origin", "casualshammy", True)
+utils.callThrowIfError("git stash", True)
+git.merge("main", git.get_current_branch_name(), True, "casualshammy", True)
