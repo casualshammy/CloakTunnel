@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+		<PropertyGroup>
+				<OutputType>Exe</OutputType>
+				<TargetFramework>net8.0</TargetFramework>
+				<PublishAot>true</PublishAot>
+				<ImplicitUsings>enable</ImplicitUsings>
+				<Nullable>enable</Nullable>
+				<AssemblyName>cloaktunnel-server</AssemblyName>
+		</PropertyGroup>
+
+		<ItemGroup>
+				<None Remove="local.json" />
+				<None Remove="_build_ubuntu.bat" />
+		</ItemGroup>
+
+		<ItemGroup>
+				<PackageReference Include="FluentArgs" Version="0.9.7" />
+		</ItemGroup>
+
+		<ItemGroup>
+				<ProjectReference Include="..\Common\CloakTunnel.Common.csproj" />
+		</ItemGroup>
+
+</Project>
