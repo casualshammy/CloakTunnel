@@ -9,6 +9,7 @@ using CloakTunnel.Server.Interfaces;
 using CloakTunnel.Server.Modules.SettingsProvider;
 using CloakTunnel.Server.Modules.UdpProxy;
 using FluentArgs;
+using System.Reactive.Linq;
 using System.Reflection;
 
 namespace CloakTunnel.Server;
@@ -106,7 +107,11 @@ public class Program
 
     try
     {
-      await Task.Delay(-1, lifetime.Token);
+      //await Task.Delay(-1, lifetime.Token);
+      await lifetime.OnEnd.FirstOrDefaultAsync();
+
+      // wait for the logger to flush
+      await Task.Delay(TimeSpan.FromSeconds(1));
     }
     catch (TaskCanceledException)
     {

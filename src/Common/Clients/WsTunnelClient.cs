@@ -219,6 +219,8 @@ public class WsTunnelClient : ITunnelClient
         IsReconnectionEnabled = true,
       };
 
+      lifetime.ToDisposeOnEnding(wsClient);
+
       _ = CreateRemoteServerRoutineAsync(
         wsClient,
         _localServiceSocket,

@@ -9,6 +9,7 @@ using CloakTunnel.Client.Modules.TunnelController;
 using CloakTunnel.Common.Data;
 using CloakTunnel.Common.Toolkit;
 using FluentArgs;
+using System.Reactive.Linq;
 using System.Reflection;
 
 namespace CloakTunnel.Client;
@@ -104,7 +105,11 @@ public class Program
 
     try
     {
-      await Task.Delay(-1, lifetime.Token);
+      //await Task.Delay(-1, lifetime.Token);
+      await lifetime.OnEnd.FirstOrDefaultAsync();
+
+      // wait for the logger to flush
+      await Task.Delay(TimeSpan.FromSeconds(1));
     }
     catch (TaskCanceledException)
     {
