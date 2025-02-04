@@ -23,10 +23,10 @@ internal class TunnelControllerImpl : IAppModule<TunnelControllerImpl>
   {
     var options = _settingsProvider.Options;
 
-    _logger.Warn($"Launching udp tunnel L:{options.LocalEndpoint} > R:{options.RemoteEndpoint}; algorithm: {options.EncryptionAlgorithm}...");
-    if (options.LocalEndpointType == EndpointType.Udp)
+    _logger.Warn($"Launching {options.BindType.ToString().ToLowerInvariant()} tunnel {options.BindUri} > {options.ForwardUri}; algorithm: {options.Encryption}...");
+    if (options.BindType == EndpointType.Udp)
       _ = new UdpTunnelServer(options, _lifetime, _logger);
-    else if (options.LocalEndpointType == EndpointType.Websocket)
+    else if (options.BindType == EndpointType.Websocket)
       _ = new WsTunnelServer(options, _lifetime, _logger);
   }
 

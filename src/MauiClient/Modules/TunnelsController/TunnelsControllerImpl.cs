@@ -5,6 +5,7 @@ using Ax.Fw.SharedTypes.Interfaces;
 using CloakTunnel.Common.Clients;
 using CloakTunnel.Common.Data;
 using CloakTunnel.Common.Interfaces;
+using CloakTunnel.Common.Toolkit;
 using CloakTunnel.MauiClient.Data;
 using CloakTunnel.MauiClient.Interfaces;
 using CloakTunnel.MauiClient.Platforms.Android.Services;
@@ -55,17 +56,15 @@ internal class TunnelsControllerImpl : IUdpTunnelCtrl, IAppModule<IUdpTunnelCtrl
             continue;
           }
 
-          var remote = conf.RemoteAddress;
-          if (remote == null || !Uri.TryCreate(remote, UriKind.Absolute, out var remoteUri))
+          if (!UriToolkit.CheckUdpUri(conf.LocalAddress, out var bindUri))
           {
-            p_log.Warn($"Tunnel {conf.Guid} has incorrect remote uri: '{remote}'");
+            p_log.Warn($"Tunnel {conf.Guid} has incorrect local endpoint: '{conf.LocalAddress}'");
             continue;
           }
 
-          var local = conf.LocalAddress;
-          if (local == null || !Uri.TryCreate(local, UriKind.Absolute, out var localUri))
+          if (!UriToolkit.CheckUdpOrWsOrWssUri(conf.RemoteAddress, out var forwardUri))
           {
-            p_log.Warn($"Tunnel {conf.Guid} has incorrect local endpoint: '{local}'");
+            p_log.Warn($"Tunnel {conf.Guid} has incorrect remote uri: '{conf.RemoteAddress}'");
             continue;
           }
 
@@ -76,22 +75,16 @@ internal class TunnelsControllerImpl : IUdpTunnelCtrl, IAppModule<IUdpTunnelCtrl
             continue;
           }
 
-          var tunnelType = remoteUri.Scheme.StartsWith("ws") || remoteUri.Scheme.StartsWith("wss") 
+          var tunnelType = forwardUri.Scheme.StartsWith("ws") || forwardUri.Scheme.StartsWith("wss") 
             ? EndpointType.Websocket
             : EndpointType.Udp;
-
-          if (tunnelType == EndpointType.Websocket && remoteUri.AbsolutePath.Length < 3)
-          {
-            p_log.Warn($"Websocket path (section after last '/') must be at least 2 characters long");
-            continue;
-          }
 
           var encryption = conf.EncryptionAlgo;
 
           var log = _logger[Interlocked.Increment(ref instanceCounter).ToString()];
-          log.Info($"Launching {tunnelType} tunnel; remote: {remoteUri}, local: {localUri}, cipher: {encryption}");
+          log.Info($"Launching {tunnelType} tunnel {bindUri} -> {forwardUri} (encryption: {encryption})");
 
-          var options = new UdpTunnelClientOptions(tunnelType, localUri, remoteUri, encryption, key);
+          var options = new TunnelClientOptions(tunnelType, bindUri, forwardUri, encryption, key);
 
           ITunnelClient tunnel;
           if (tunnelType == EndpointType.Udp)
@@ -99,7 +92,18 @@ internal class TunnelsControllerImpl : IUdpTunnelCtrl, IAppModule<IUdpTunnelCtrl
           else
             tunnel = new WsTunnelClient(options, _life, log);
 
-          tunnel.Stats.Subscribe(_ => p_statsSubj.OnNext(new TunnelStatWithName(conf.Guid, conf.Name, _.TxBytePerSecond, _.RxBytePerSecond)), _life);
+          tunnel.Stats.Subscribe(_ =>
+          {
+            var entry = new TunnelStatWithName(
+              conf.Guid,
+              conf.Name,
+              _.TxBytePerSecond,
+              _.RxBytePerSecond,
+              _.TotalBytesSent,
+              _.TotalBytesReceived);
+
+            p_statsSubj.OnNext(entry);
+          }, _life);
 
           // handle cases then there is not received traffic
           tunnel.Stats

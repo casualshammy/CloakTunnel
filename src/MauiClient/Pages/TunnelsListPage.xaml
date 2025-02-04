@@ -32,41 +32,41 @@
                 SelectionChanged="OnItemSelected">
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition />
-                                <ColumnDefinition />
-                            </Grid.ColumnDefinitions>
-                            <VerticalStackLayout
-                                Grid.Column="0"
-                                Margin="20, 0, 0, 0"
-                                HorizontalOptions="FillAndExpand"
-                                VerticalOptions="FillAndExpand">
-                                <Label
-                                    Text="{Binding Name}"
-                                    FontSize="Medium" />
-                                <HorizontalStackLayout>
+                        <VerticalStackLayout>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="60" />
+                                </Grid.ColumnDefinitions>
+                                <VerticalStackLayout
+                                    Grid.Column="0"
+                                    Margin="20, 0, 0, 0"
+                                    HorizontalOptions="FillAndExpand"
+                                    VerticalOptions="FillAndExpand">
                                     <Label
-                                        Text="{Binding LocalAddress}"
+                                        Text="{Binding Name}"
+                                        FontSize="Medium" />
+                                    <Label
+                                        Text="{Binding LocalAddress, StringFormat='From: {0}'}"
                                         FontSize="Small"
                                         TextColor="Gray"/>
                                     <Label
-                                        Text=" ➡ "
+                                        Text="{Binding RemoteAddress, StringFormat='To: {0}'}"
                                         FontSize="Small"
                                         TextColor="Gray"/>
-                                    <Label
-                                        Text="{Binding RemoteAddress}"
-                                        FontSize="Small"
-                                        TextColor="Gray"/>
-                                </HorizontalStackLayout>
-                            </VerticalStackLayout>
-                            <CheckBox 
-                                Grid.Column="1"
-                                Margin="0, 0, 20, 0"
-                                HorizontalOptions="End"
-                                VerticalOptions="Center"
-                                IsChecked="{Binding Enabled }" />
-                        </Grid>
+                                </VerticalStackLayout>
+                                <Switch
+                                    Grid.Column="1"
+                                    Margin="0, 0, 10, 0"
+                                    IsToggled="{Binding Enabled }" />
+                            </Grid>
+                            <Rectangle
+                                VerticalOptions="End"
+                                Fill="{AppThemeBinding Light=Blue, Dark=CadetBlue}"
+                                Stroke="{AppThemeBinding Light=Blue, Dark=CadetBlue}"
+                                Margin="-20, 0"
+                                HeightRequest="1"/>
+                        </VerticalStackLayout>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
             </CollectionView>

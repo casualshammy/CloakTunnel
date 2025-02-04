@@ -5,11 +5,11 @@ namespace CloakTunnel.Server.Modules.SettingsProvider;
 
 internal class SettingsProviderImpl : ISettingsProvider
 {
-  public SettingsProviderImpl(UdpTunnelServerOptions _options)
+  public SettingsProviderImpl(TunnelServerOptions _options)
   {
     Options = _options;
   }
 
-  public UdpTunnelServerOptions Options { get; }
+  public TunnelServerOptions Options { get; }
 
 }

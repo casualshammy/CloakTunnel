@@ -36,7 +36,7 @@
                         FontAttributes="Bold"
                         VerticalOptions="Center"
                         TextColor="{AppThemeBinding Light=Blue, Dark=CadetBlue}"/>
-                     <Rectangle 
+                    <Rectangle 
                         Grid.Column="0"
                         Grid.Row="1"
                         Grid.ColumnSpan="2"
@@ -78,17 +78,17 @@
                 </Grid>
                 <controls:OptionsItem
                     Grid.Row="1"
-                    Title="Remote Address"
-                    DetailsText="{Binding RemoteAddress}"
-                    TapCommand="{Binding RemoteAddressCommand}"/>
-                <controls:OptionsItem
-                    Grid.Row="2"
-                    Title="Local Address"
+                    Title="Bind URI"
                     DetailsText="{Binding LocalAddress}"
                     TapCommand="{Binding LocalAddressCommand}"/>
                 <controls:OptionsItem
+                    Grid.Row="2"
+                    Title="Forward URI"
+                    DetailsText="{Binding RemoteAddress}"
+                    TapCommand="{Binding RemoteAddressCommand}"/>
+                <controls:OptionsItem
                     Grid.Row="3"
-                    Title="Encryption Algorithm"
+                    Title="Encryption"
                     DetailsText="{Binding EncryptionAlgo}"
                     TapCommand="{Binding EncryptionCommand}"/>
                 <controls:OptionsItem
@@ -99,15 +99,6 @@
                     ShowBottomLine="False"/>
             </VerticalStackLayout>
         </ScrollView>
-        <!--<Button
-            Grid.Row="1"
-            BackgroundColor="BlueViolet"
-            HorizontalOptions="FillAndExpand"
-            Margin="10, 0, 10, 10"
-            Text="Benchmark encryption algorithms"
-            TextColor="FloralWhite" 
-            FontSize="Medium"
-            Clicked="Benchmark_Clicked"/>-->
         <Button
             Grid.Row="2"
             Background="{Binding DeleteBtnColor}"

@@ -1,4 +1,5 @@
-﻿using Ax.Fw.SharedTypes.Interfaces;
+﻿using Ax.Fw.Extensions;
+using Ax.Fw.SharedTypes.Interfaces;
 using CloakTunnel.Common.Data;
 using System.Diagnostics;
 
@@ -16,7 +17,7 @@ public static class EncryptionAlgorithmsTest
       if (result.ResultMs == null)
         _logger.Warn($"Algorithm '{algoSlug}' is not supported on this platform");
       else
-        _logger.Info($"{algoSlug}: {Converters.BytesPerSecondToString(result.WorkVolumeBytes / (result.ResultMs.Value / 1000d))}");
+        _logger.Info($"{algoSlug}: {(result.WorkVolumeBytes / (result.ResultMs.Value / 1000d)).BytesPerSecondToString()}");
     }
     _logger.Warn($"==================================================================");
   }

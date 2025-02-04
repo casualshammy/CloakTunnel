@@ -4,6 +4,7 @@ using Android.OS;
 using Android.Runtime;
 using Android.Widget;
 using AndroidX.Core.App;
+using Ax.Fw;
 using Ax.Fw.DependencyInjection;
 using Ax.Fw.Extensions;
 using Ax.Fw.SharedTypes.Interfaces;
@@ -22,6 +23,7 @@ public class UdpTunnelService : global::Android.App.Service, IUdpTunnelService, 
   private const string SERVICE_NOTIFICATION_CHANNEL = "ServiceChannel";
   private const string GENERAL_NOTIFICATION_CHANNEL = "GeneralChannel";
   private const string STOP_TUNNEL_ID_ACTION_EXTRA = "tunnel-id";
+  private const string STOP_APP_ACTION = "STOP_APP";
   private const int SERVICE_NOTIFICATION_ID = 100;
   private const int BATTERY_OPTIMIZATION_NOTIFICATION_ID = 200;
   private const int REQUEST_POST_NOTIFICATIONS = 1000;
@@ -82,7 +84,9 @@ public class UdpTunnelService : global::Android.App.Service, IUdpTunnelService, 
           {
             var rxAvg = _list.Where(_ => _.TunnelGuid == tunnel.TunnelGuid).Average(_ => (long)_.RxBytePerSecond);
             var txAvg = _list.Where(_ => _.TunnelGuid == tunnel.TunnelGuid).Average(_ => (long)_.TxBytePerSecond);
-            listAvg.Add(new TunnelStatWithName(tunnel.TunnelGuid, tunnel.TunnelName, (ulong)txAvg, (ulong)rxAvg));
+            var txTotal = _list.Where(_ => _.TunnelGuid == tunnel.TunnelGuid).Max(_ => _.TotalTxBytes);
+            var rxTotal = _list.Where(_ => _.TunnelGuid == tunnel.TunnelGuid).Max(_ => _.TotalRxBytes);
+            listAvg.Add(new TunnelStatWithName(tunnel.TunnelGuid, tunnel.TunnelName, (ulong)txAvg, (ulong)rxAvg, txTotal, rxTotal));
           }
 
           BuildOrUpdateServiceNotification(listAvg, false, p_serviceLifetime.Token);
@@ -101,6 +105,11 @@ public class UdpTunnelService : global::Android.App.Service, IUdpTunnelService, 
     else if (_intent?.Action == "STOP_SERVICE")
     {
       p_serviceLifetime?.Dispose();
+    }
+    else if (_intent?.Action == STOP_APP_ACTION)
+    {
+      var appLifetime = MauiProgram.Container.LocateOrDefault<ILifetime>();
+      appLifetime?.End();
     }
 
     return StartCommandResult.NotSticky;
@@ -144,9 +153,15 @@ public class UdpTunnelService : global::Android.App.Service, IUdpTunnelService, 
     var title = $"{_tunnels.Count} tunnels is up";
     var text = string.Empty;
     foreach (var tunnel in _tunnels)
-      text += $"[{tunnel.TunnelName}] Rx: {Converters.BytesPerSecondToString(tunnel.RxBytePerSecond)}; Tx: {Converters.BytesPerSecondToString(tunnel.TxBytePerSecond)}\n";
+      text += $"[{tunnel.TunnelName}] Rx: {((double)tunnel.RxBytePerSecond).BytesPerSecondToString()}; Tx: {((double)tunnel.TxBytePerSecond).BytesPerSecondToString()}\n";
 
     text = text.TrimEnd('\n');
+    var subText = $"🔼 {_tunnels.Sum(_ => (long)_.TotalTxBytes).ToHumanBytes()} 🔽 {_tunnels.Sum(_ => (long)_.TotalRxBytes).ToHumanBytes()}";
+
+    var stopAppIntent = new Intent();
+    stopAppIntent.SetClass(context, Class);
+    stopAppIntent.SetAction(STOP_APP_ACTION);
+    var stopAppActivity = PendingIntent.GetForegroundService(context, 0, stopAppIntent, PendingIntentFlags.Immutable);
 
     //var layoutSmall = new RemoteViews(context.PackageName, Resource.Layout.notification_small);
     //layoutSmall.SetTextViewText(Resource.Id.notification_small_title, title);
@@ -156,15 +171,17 @@ public class UdpTunnelService : global::Android.App.Service, IUdpTunnelService, 
     //layoutLarge.SetTextViewText(Resource.Id.notification_large_body, text);
 
     var builder = new Notification.Builder(this, SERVICE_NOTIFICATION_CHANNEL)
-     .SetContentIntent(openAppIntent)
-     .SetSmallIcon(Resource.Drawable.infinity)
-     .SetOnlyAlertOnce(true)
-     .SetOngoing(true)
-     //.SetStyle(new Notification.DecoratedCustomViewStyle())
-     //.SetCustomContentView(layoutSmall)
-     //.SetCustomBigContentView(layoutLarge)
-     .SetContentTitle(title)
-     .SetContentText(text);
+       .SetContentIntent(openAppIntent)
+       .SetSmallIcon(Resource.Drawable.infinity)
+       .SetOnlyAlertOnce(true)
+       .SetOngoing(true)
+       //.SetStyle(new Notification.DecoratedCustomViewStyle())
+       //.SetCustomContentView(layoutSmall)
+       //.SetCustomBigContentView(layoutLarge)
+       .SetContentTitle(title)
+       .SetContentText(text)
+       .SetSubText(subText)
+       .AddAction(new Notification.Action(Resource.Drawable.abc_edit_text_material, "Stop all", stopAppActivity));
 
 #pragma warning disable CA1416 // Validate platform compatibility
     if (_firstShow && Build.VERSION.SdkInt >= BuildVersionCodes.S)

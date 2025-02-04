@@ -24,7 +24,17 @@ public partial class TunnelEditPage : CContentPage
 
   private async void DeleteBtn_Clicked(object _sender, EventArgs _e)
   {
+    var confirmed = await DisplayAlert(
+      "Confirmation",
+      $"Are you sure you want to delete '{p_tunnelModel.Name}' tunnel?",
+      "Yes",
+      "Cancel");
+
+    if (!confirmed)
+      return;
+
     p_tunnelsConfCtrl.DeleteTunnelConf(p_tunnelModel.Guid);
     _ = await Navigation.PopAsync();
   }
+
 }

@@ -1,4 +1,6 @@
-﻿using CloakTunnel.Common.Data;
+﻿using Ax.Fw.SharedTypes.Data;
+using Ax.Fw;
+using CloakTunnel.Common.Data;
 using CloakTunnel.Server.Modules.WebSocketController.Parts;
 using Microsoft.AspNetCore.Mvc;
 using ILog = Ax.Fw.SharedTypes.Interfaces.ILog;
@@ -7,19 +9,19 @@ namespace CloakTunnel.Server.Modules.WebServer.Controllers;
 
 internal class ApiControllerV0
 {
-  private static long p_wsSessionsCount = 0;
+  private static long p_wsSessionsCount = -1;
   private static long p_reqCount = -1;
 
-  private readonly UdpTunnelServerOptions p_options;
+  private readonly string p_passKeyHash;
   private readonly WsServer p_wsServer;
   private readonly ILog p_log;
 
   public ApiControllerV0(
-    UdpTunnelServerOptions _options,
+    TunnelServerOptions _options,
     WsServer _wsServer,
     ILog _logger)
   {
-    p_options = _options;
+    p_passKeyHash = Cryptography.CalculateSHAHash(_options.PassKey, HashComplexity.Bit512);
     p_wsServer = _wsServer;
     p_log = _logger;
   }
@@ -27,10 +29,10 @@ internal class ApiControllerV0
   //[HttpGet("/ws")]
   public async Task<IResult> StartWebSocketAsync(
     HttpRequest _httpRequest,
-    [FromQuery(Name = "key")] string? _key,
+    [FromQuery(Name = "key")] string? _keyHash,
     CancellationToken _ct)
   {
-    if (p_options.PassKey != _key)
+    if (p_passKeyHash != _keyHash)
       return Results.BadRequest();
 
     if (!_httpRequest.HttpContext.WebSockets.IsWebSocketRequest)

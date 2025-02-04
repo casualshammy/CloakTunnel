@@ -21,68 +21,98 @@ public class Program
     var assembly = Assembly.GetExecutingAssembly() ?? throw new Exception("Can't get assembly!");
 
     var lifetime = new Lifetime();
-    using var logger = new GenericLog(null)
+    using var logger = new GenericLog()
       .AttachConsoleLog();
 
     if (_args?.Length == 1 && _args[0] == "test")
     {
       EncryptionAlgorithmsTest.TestAndPrintInConsole(lifetime, logger);
+      await Task.Delay(TimeSpan.FromSeconds(1));
       return;
     }
 
     if (_args?.Length == 1 && _args[0] == "genkey")
     {
-      logger.Warn($"===== Use this key in tunnel's description =====");
       logger.Info(Utilities.GetRandomString(32, false));
-      logger.Warn($"================================================");
+      await Task.Delay(TimeSpan.FromSeconds(1));
       return;
     }
 
-    var localAddress = (string?)null;
-    var remoteAddress = (string?)null;
-    var passKey = (string?)null;
-    var cipher = (string?)null;
-    FluentArgsBuilder
+    var args = new List<string>((_args ?? []))
+      .AddEnvVarAsArg("CLOAK_TUNNEL_BIND", "-b")
+      .AddEnvVarAsArg("CLOAK_TUNNEL_FORWARD", "-f")
+      .AddEnvVarAsArg("CLOAK_TUNNEL_PASSKEY", "-p")
+      .AddEnvVarAsArg("CLOAK_TUNNEL_CIPHER", "-c")
+      .ToArray();
+
+    var options = (TunnelServerOptions?)null;
+    var argParseSuccess = FluentArgsBuilder
       .New()
-      .Parameter<string>("-L", "--local")
-        .WithDescription("Bind server to this address")
-        .WithValidation(_ => _.StartsWith("udp://") || _.StartsWith("ws://"))
-        .WithExamples("udp://0.0.0.0:4123", "ws://0.0.0.0:8088/endpoint")
+      .RegisterDefaultHelpFlags()
+      .Parameter<string>("-b", "--bind")
+        .WithDescription("Bind input traffic to this address")
+        .WithValidation(_arg =>
+        {
+          if (!Uri.TryCreate(_arg, UriKind.Absolute, out var uri))
+            return false;
+
+          if (uri.Scheme == "ws" && uri.AbsolutePath.Length < 4)
+            return false;
+
+          return uri.Scheme == "udp" || uri.Scheme == "ws";
+        }, "Argument must be in format 'udp://<ip-address>:<port>' or 'ws://<ip-address>:<port>/<ws-path>'; <ws-path> must be at least 4 characters long")
+        .WithExamples("udp://0.0.0.0:1935", "ws://0.0.0.0:8088/ws-path")
         .IsRequired()
-      .Parameter<string>("-R", "--remote")
+      .Parameter<string>("-f", "--forward")
         .WithDescription("Forward traffic to this endpoint")
-        .WithValidation(_ => _.StartsWith("udp://"))
+        .WithValidation(_arg =>
+        {
+          if (!Uri.TryCreate(_arg, UriKind.Absolute, out var uri))
+            return false;
+
+          return uri.Scheme == "udp";
+        }, "Argument must be in format 'udp://<ip-address>:<port>'")
         .WithExamples("udp://127.0.0.1:51820")
         .IsRequired()
       .Parameter<string>("-p", "--passkey")
         .WithDescription("Key to encrypt traffic")
-        .WithValidation(_ => _.Length >= 4)
+        .WithValidation(_arg => _arg.Length >= 8, "Argument must be a string at least 8 characters long")
         .WithExamples(Utilities.GetRandomString(8, false))
         .IsRequired()
       .Parameter<string>("-c", "--cipher")
         .WithDescription($"Cipher algorithm to use in encryption (default: {EncryptionToolkit.ENCRYPTION_ALG_SLUG[EncryptionAlgorithm.AesGcmObfs256]})")
-        .WithValidation(EncryptionToolkit.ENCRYPTION_ALG_SLUG_REVERSE.ContainsKey)
+        .WithValidation(
+          EncryptionToolkit.ENCRYPTION_ALG_SLUG_REVERSE.ContainsKey, 
+          $"Encryption algorithm must be one of: {string.Join(", ", EncryptionToolkit.ENCRYPTION_ALG_SLUG.Values)}")
         .WithExamples(EncryptionToolkit.ENCRYPTION_ALG_SLUG[EncryptionAlgorithm.AesGcmObfs256], EncryptionToolkit.ENCRYPTION_ALG_SLUG.Values.ToArray())
         .IsOptionalWithDefault(EncryptionToolkit.ENCRYPTION_ALG_SLUG[EncryptionAlgorithm.AesGcmObfs256])
-      .Call(_cipher => _passKey => _remote => _local =>
+      .Call(_cipher => _passKey => _forwardUri => _bindUri =>
       {
-        localAddress = _local;
-        remoteAddress = _remote;
-        passKey = _passKey;
-        cipher = _cipher;
+        if (Uri.TryCreate(_bindUri, UriKind.Absolute, out var bindUri) 
+          && Uri.TryCreate(_forwardUri, UriKind.Absolute, out var forwardUri)
+          && EncryptionToolkit.ENCRYPTION_ALG_SLUG_REVERSE.TryGetValue(_cipher, out var encAlgo))
+          options = new TunnelServerOptions(
+            bindUri.Scheme.StartsWith("udp") ? EndpointType.Udp : EndpointType.Websocket,
+            bindUri,
+            forwardUri,
+            encAlgo,
+            _passKey);
       })
-      .Parse(_args ?? []);
+      .Parse(args);
 
-    var options = CreateOptions(logger, cipher, passKey, remoteAddress, localAddress);
-    if (options == null)
+    if (!argParseSuccess || options == null)
+    {
+      logger.Error($"Argument parsing error");
+      await Task.Delay(TimeSpan.FromSeconds(1));
       return;
+    }
 
     var settingsProvider = new SettingsProviderImpl(options);
 
     lifetime.DoOnEnded(() =>
     {
       logger.Info($"-------------------------------------------");
-      logger.Info($"Server stopped");
+      logger.Info($"CloakTunnel Server stopped");
       logger.Info($"-------------------------------------------");
     });
 
@@ -117,61 +147,6 @@ public class Program
     {
       // ignore
     }
-  }
-
-  private static UdpTunnelServerOptions? CreateOptions(
-    ILog _logger,
-    string? _cipher,
-    string? _passKey,
-    string? _remote,
-    string? _local)
-  {
-    if (_cipher.IsNullOrWhiteSpace() || !EncryptionToolkit.ENCRYPTION_ALG_SLUG_REVERSE.TryGetValue(_cipher, out var encAlgo))
-    {
-      _logger.Warn($"Unknown encryption algorithm '{_cipher}'! Please refer to documentation");
-      return null;
-    }
-
-    if (_passKey.IsNullOrWhiteSpace() || _passKey.Length < 4)
-    {
-      _logger.Warn($"Passkey is too short (min: 4 characters)");
-      return null;
-    }
-
-    if (_remote.IsNullOrWhiteSpace())
-    {
-      _logger.Warn($"Remote endpoint is empty");
-      return null;
-    }
-
-    var remoteUri = new Uri(_remote);
-
-    if (_local.IsNullOrWhiteSpace())
-    {
-      _logger.Warn($"Local endpoint is empty");
-      return null;
-    }
-
-    var localUri = new Uri(_local);
-
-    if (localUri.Scheme.StartsWith("wss"))
-    {
-      _logger.Warn($"Secure websocket is not supported; use reverse proxy like nginx");
-      return null;
-    }
-
-    if (localUri.Scheme.StartsWith("ws") && localUri.AbsolutePath.Length < 3)
-    {
-      _logger.Warn($"Websocket path (section after last '/') must be at least 2 characters long");
-      return null;
-    }
-
-    return new UdpTunnelServerOptions(
-      localUri.Scheme.StartsWith("udp") ? EndpointType.Udp : EndpointType.Websocket,
-      localUri,
-      remoteUri,
-      encAlgo,
-      _passKey);
   }
 
 }

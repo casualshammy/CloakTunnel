@@ -1,4 +1,5 @@
-﻿using Ax.Fw.SharedTypes.Interfaces;
+﻿using Ax.Fw.Extensions;
+using Ax.Fw.SharedTypes.Interfaces;
 using CloakTunnel.Common.Toolkit;
 using CloakTunnel.MauiClient.Toolkit;
 using System.Reactive.Linq;
@@ -55,7 +56,7 @@ public partial class BenchmarkPage : CContentPage
         if (result.ResultMs == null)
           message += $"Cipher '{algoSlug}' is not supported on this platform\n";
         else
-          message += $"{algoSlug}: {Converters.BytesPerSecondToString(result.WorkVolumeBytes / (result.ResultMs.Value / 1000d))}\n";
+          message += $"{algoSlug}: {(result.WorkVolumeBytes / (result.ResultMs.Value / 1000d)).BytesPerSecondToString()}\n";
       }
 
       await DisplayAlert("Benchmark results", message, "Close");

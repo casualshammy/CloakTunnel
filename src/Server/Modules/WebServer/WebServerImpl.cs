@@ -11,12 +11,12 @@ namespace CloakTunnel.Server.Modules.WebServer;
 
 internal class WebServerImpl
 {
-  private readonly UdpTunnelServerOptions p_options;
+  private readonly TunnelServerOptions p_options;
   private readonly ILog p_logger;
   private readonly WsServer p_wsServer;
 
   public WebServerImpl(
-    UdpTunnelServerOptions _options,
+    TunnelServerOptions _options,
     ILog _logger,
     IReadOnlyLifetime _lifetime)
   {
@@ -28,12 +28,12 @@ internal class WebServerImpl
     {
       try
       {
-        _logger.Info($"Starting server on {_options.LocalEndpoint}...");
+        _logger.Info($"Starting kestrel server on {_options.BindUri}...");
 
-        using (var host = CreateWebHost(_options.LocalEndpoint.Host, _options.LocalEndpoint.Port))
+        using (var host = CreateWebHost(_options.BindUri.Host, _options.BindUri.Port))
           await host.RunAsync(_lifetime.Token);
 
-        _logger.Info($"Server on {_options.LocalEndpoint} is stopped");
+        _logger.Info($"Kestrel server on {_options.BindUri} is stopped");
       }
       catch (Exception ex)
       {
@@ -79,7 +79,7 @@ internal class WebServerImpl
         KeepAliveInterval = TimeSpan.FromSeconds(30)
       });
 
-    app.MapGet(p_options.LocalEndpoint.AbsolutePath, controller.StartWebSocketAsync);
+    app.MapGet(p_options.BindUri.AbsolutePath, controller.StartWebSocketAsync);
 
     return app;
   }

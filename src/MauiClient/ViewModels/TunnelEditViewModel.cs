@@ -4,7 +4,6 @@ using CloakTunnel.Common.Toolkit;
 using CloakTunnel.MauiClient.Data;
 using CloakTunnel.MauiClient.Interfaces;
 using CloakTunnel.MauiClient.Toolkit;
-using System.Net;
 using System.Reactive.Linq;
 using System.Windows.Input;
 
@@ -169,7 +168,7 @@ public class TunnelEditViewModel : ObservableModel
       return;
 
     var dialogResult = await currentPage.DisplayPromptAsync(
-        "Name:",
+        "Tunnel's name:",
         null,
         "Save",
         placeholder: "",
@@ -182,55 +181,62 @@ public class TunnelEditViewModel : ObservableModel
     Name = dialogResult;
   }
 
-  private async void OnRemoteAddress(object _arg)
-  {
-    var currentPage = p_pagesController.CurrentPage;
-    if (currentPage == null)
-      return;
-
-    var address = await currentPage.DisplayPromptAsync(
-        "Remote Address:",
-        null,
-        "Save",
-        placeholder: "<ip-address>:<port>",
-        initialValue: RemoteAddress,
-        keyboard: Keyboard.Url);
-
-    if (address == null)
-      return;
-    if (!Uri.TryCreate(address, UriKind.Absolute, out _))
-    {
-      await currentPage.DisplayAlert("The address should be in the format '<scheme>://<domain/ip>:<port>'", "For example, 'udp://123.123.123.123:12345' or 'wss://example.com:8088/endpoint'", "Okay");
-      return;
-    }
-
-    RemoteAddress = address;
-  }
-
   private async void OnLocalAddress(object _arg)
   {
     var currentPage = p_pagesController.CurrentPage;
     if (currentPage == null)
       return;
 
-    var address = await currentPage.DisplayPromptAsync(
-        "Local Address:",
+    var rawUri = await currentPage.DisplayPromptAsync(
+        "Bind (local) URI:",
         null,
         "Save",
-        placeholder: "<ip-address>:<port>",
+        placeholder: "udp://<ip-address>:<port>",
         initialValue: LocalAddress,
         keyboard: Keyboard.Url);
 
-    if (address == null)
+    if (rawUri == null)
       return;
-
-    if (!Uri.TryCreate(address, UriKind.Absolute, out _))
+    if (!UriToolkit.CheckUdpUri(rawUri, out _))
     {
-      await currentPage.DisplayAlert("The address should be in the format '<scheme>://<domain/ip>:<port>'", "For example, 'udp://123.123.123.123:12345' or 'wss://example.com:8088/endpoint'", "Okay");
+      await currentPage.DisplayAlert(
+        "Incorrect URI format",
+        "The address should be in the format 'udp://<domain/ip>:<port>; for example, 'udp://123.123.123.123:12345'", 
+        "Okay");
+
       return;
     }
 
-    LocalAddress = address;
+    LocalAddress = rawUri;
+  }
+
+  private async void OnRemoteAddress(object _arg)
+  {
+    var currentPage = p_pagesController.CurrentPage;
+    if (currentPage == null)
+      return;
+
+    var rawUri = await currentPage.DisplayPromptAsync(
+        "Forward (server) URI:",
+        null,
+        "Save",
+        placeholder: "<udp/ws/wss>://<ip-address>:<port>",
+        initialValue: RemoteAddress,
+        keyboard: Keyboard.Url);
+
+    if (rawUri == null)
+      return;
+    if (!UriToolkit.CheckUdpOrWsOrWssUri(rawUri, out _))
+    {
+      await currentPage.DisplayAlert(
+        "Incorrect URI format",
+        "The address should be in the format '<scheme>://<domain/ip>:<port>'; for example, 'udp://123.123.123.123:12345' or 'wss://example.com:8088/endpoint'", 
+        "Okay");
+
+      return;
+    }
+
+    RemoteAddress = rawUri;
   }
 
   private async void OnEncryption(object _arg)
@@ -239,7 +245,7 @@ public class TunnelEditViewModel : ObservableModel
     if (currentPage == null)
       return;
 
-    var result = await currentPage.DisplayActionSheet("Please select algorithm:", null, null, EncryptionToolkit.ENCRYPTION_ALG_SLUG_REVERSE.Keys.ToArray());
+    var result = await currentPage.DisplayActionSheet("Please select encryption:", null, null, EncryptionToolkit.ENCRYPTION_ALG_SLUG_REVERSE.Keys.ToArray());
     if (result == null)
       return;
 

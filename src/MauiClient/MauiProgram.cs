@@ -27,7 +27,7 @@ public static partial class MauiProgram
     if (!Directory.Exists(logsFolder))
       Directory.CreateDirectory(logsFolder);
 
-    var logger = new GenericLog(null)
+    var logger = new GenericLog()
       .AttachFileLog(() => Path.Combine(logsFolder, $"{DateTimeOffset.UtcNow:yyyy-MM-dd}.log"), TimeSpan.FromSeconds(1));
 
     lifetime.ToDisposeOnEnded(logger);

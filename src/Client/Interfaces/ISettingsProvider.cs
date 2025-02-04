@@ -4,5 +4,5 @@ namespace CloakTunnel.Client.Interfaces;
 
 internal interface ISettingsProvider
 {
-  public UdpTunnelClientOptions Options { get; }
+  public TunnelClientOptions Options { get; }
 }
