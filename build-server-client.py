@@ -45,8 +45,9 @@ serverOutputDir = os.path.join(outputDir, "server")
 packages.adjust_csproj_version(os.path.join(os.getcwd(), sourceDirNameServer), version)
 if (platform == "linux-arm64"):
   packages.csproj_switch_aot(os.path.join(os.getcwd(), sourceDirNameServer), False)
-
-utils.callThrowIfError(f"dotnet publish {sourceDirNameServer} -r {platform} -o \"{serverOutputDir}\"", True)
+  utils.callThrowIfError(f"dotnet publish {sourceDirNameServer} -r {platform} --self-contained -o \"{serverOutputDir}\"", True)
+else:
+  utils.callThrowIfError(f"dotnet publish {sourceDirNameServer} -r {platform} -o \"{serverOutputDir}\"", True)
 
 print(f"===========================================", flush=True)
 print(f"Compiling client for platform '{platform}'...", flush=True)
@@ -56,8 +57,9 @@ clientOutputDir = os.path.join(outputDir, "client")
 packages.adjust_csproj_version(os.path.join(os.getcwd(), sourceDirNameClient), version)
 if (platform == "linux-arm64"):
   packages.csproj_switch_aot(os.path.join(os.getcwd(), sourceDirNameClient), False)
-
-utils.callThrowIfError(f"dotnet publish {sourceDirNameClient} -r {platform} -o \"{clientOutputDir}\"", True)
+  utils.callThrowIfError(f"dotnet publish {sourceDirNameClient} -r {platform} --self-contained -o \"{clientOutputDir}\"", True)
+else:
+ utils.callThrowIfError(f"dotnet publish {sourceDirNameClient} -r {platform} -o \"{clientOutputDir}\"", True)
 
 print(f"===========================================", flush=True)
 print(f"Creating server pkg...", flush=True)
