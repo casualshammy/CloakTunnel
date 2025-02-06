@@ -82,10 +82,14 @@ public class UdpTunnelService : global::Android.App.Service, IUdpTunnelService, 
           var listAvg = new List<TunnelStatWithName>();
           foreach (var tunnel in uniqueTunnelsEE)
           {
-            var rxAvg = _list.Where(_ => _.TunnelGuid == tunnel.TunnelGuid).Average(_ => (long)_.RxBytePerSecond);
-            var txAvg = _list.Where(_ => _.TunnelGuid == tunnel.TunnelGuid).Average(_ => (long)_.TxBytePerSecond);
-            var txTotal = _list.Where(_ => _.TunnelGuid == tunnel.TunnelGuid).Max(_ => _.TotalTxBytes);
-            var rxTotal = _list.Where(_ => _.TunnelGuid == tunnel.TunnelGuid).Max(_ => _.TotalRxBytes);
+            var tunnelEntries = _list
+              .Where(_ => _.TunnelGuid == tunnel.TunnelGuid)
+              .ToArray();
+
+            var rxAvg = tunnelEntries.Average(_ => (long)_.RxBytePerSecond);
+            var txAvg = tunnelEntries.Average(_ => (long)_.TxBytePerSecond);
+            var txTotal = tunnelEntries.Max(_ => _.TotalTxBytes);
+            var rxTotal = tunnelEntries.Max(_ => _.TotalRxBytes);
             listAvg.Add(new TunnelStatWithName(tunnel.TunnelGuid, tunnel.TunnelName, (ulong)txAvg, (ulong)rxAvg, txTotal, rxTotal));
           }
 
