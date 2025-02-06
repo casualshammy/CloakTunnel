@@ -43,6 +43,9 @@ print(f"Version: '{version}'", flush=True)
 print(f"===========================================", flush=True)
 serverOutputDir = os.path.join(outputDir, "server")
 packages.adjust_csproj_version(os.path.join(os.getcwd(), sourceDirNameServer), version)
+if (platform == "linux-arm64"):
+  packages.csproj_switch_aot(os.path.join(os.getcwd(), sourceDirNameServer), False)
+
 utils.callThrowIfError(f"dotnet publish {sourceDirNameServer} -r {platform} -o \"{serverOutputDir}\"", True)
 
 print(f"===========================================", flush=True)
@@ -51,6 +54,9 @@ print(f"Version: '{version}'", flush=True)
 print(f"===========================================", flush=True)
 clientOutputDir = os.path.join(outputDir, "client")
 packages.adjust_csproj_version(os.path.join(os.getcwd(), sourceDirNameClient), version)
+if (platform == "linux-arm64"):
+  packages.csproj_switch_aot(os.path.join(os.getcwd(), sourceDirNameClient), False)
+
 utils.callThrowIfError(f"dotnet publish {sourceDirNameClient} -r {platform} -o \"{clientOutputDir}\"", True)
 
 print(f"===========================================", flush=True)

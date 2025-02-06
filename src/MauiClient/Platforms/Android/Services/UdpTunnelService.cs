@@ -4,11 +4,9 @@ using Android.OS;
 using Android.Runtime;
 using Android.Widget;
 using AndroidX.Core.App;
-using Ax.Fw;
 using Ax.Fw.DependencyInjection;
 using Ax.Fw.Extensions;
 using Ax.Fw.SharedTypes.Interfaces;
-using CloakTunnel.Common.Toolkit;
 using CloakTunnel.MauiClient.Data;
 using CloakTunnel.MauiClient.Interfaces;
 using System.Reactive.Linq;
@@ -112,8 +110,7 @@ public class UdpTunnelService : global::Android.App.Service, IUdpTunnelService, 
     }
     else if (_intent?.Action == STOP_APP_ACTION)
     {
-      var appLifetime = MauiProgram.Container.LocateOrDefault<ILifetime>();
-      appLifetime?.End();
+      MauiProgram.ExitApp();
     }
 
     return StartCommandResult.NotSticky;
