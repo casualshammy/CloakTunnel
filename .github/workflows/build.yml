@@ -85,11 +85,6 @@ jobs:
       with:
         dotnet-version: '8.0.x'
       
-    - uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-        architecture: 'x64'
-      
     - uses: actions/checkout@v3
       with:
         submodules: true
