@@ -11,6 +11,8 @@ using CloakTunnel.MauiClient.Modules.TunnelsController;
 using CloakTunnel.MauiClient.Platforms.Android.Services;
 using System.Text.RegularExpressions;
 using System.Diagnostics.CodeAnalysis;
+using Android.Util;
+using CloakTunnel.MauiClient.Data;
 
 namespace CloakTunnel.MauiClient;
 
@@ -18,6 +20,8 @@ public static partial class MauiProgram
 {
   public static MauiApp CreateMauiApp()
   {
+    AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+
     var lifetime = new Lifetime();
     lifetime.DoOnEnded(() =>
     {
@@ -87,6 +91,13 @@ public static partial class MauiProgram
   {
     var appLifetime = Container.LocateOrDefault<ILifetime>();
     appLifetime?.End();
+  }
+
+  private static void CurrentDomain_UnhandledException(
+    object sender,
+    UnhandledExceptionEventArgs e)
+  {
+    Log.Error(AppConsts.LOG_TAG, $"UnhandledException: {e.ExceptionObject as Exception}");
   }
 
   [GeneratedRegex(@"^.+\.log$")]

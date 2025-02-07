@@ -2,6 +2,8 @@
 
 internal static class AppConsts
 {
+  public const string LOG_TAG = nameof(CloakTunnel);
+
   public const string PREF_DB_VERSION = "settings.db-version";
   public const string PREF_DB_FIRST_START_INFO_SHOWN = "settings.first-start-info-shown";
 

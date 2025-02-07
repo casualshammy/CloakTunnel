@@ -20,7 +20,7 @@ internal class AndroidLogger : ILog
 
   public string? Scope { get; }
 
-  public ILog this[string _scope] => new GenericLog(null);
+  public ILog this[string _scope] => new GenericLog();
 
   public void Error(string _text)
   {
