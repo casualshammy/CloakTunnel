@@ -10,6 +10,7 @@ using CloakTunnel.MauiClient.Modules.TunnelsConfCtrl;
 using CloakTunnel.MauiClient.Modules.TunnelsController;
 using CloakTunnel.MauiClient.Platforms.Android.Services;
 using System.Text.RegularExpressions;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CloakTunnel.MauiClient;
 
@@ -79,11 +80,14 @@ public static partial class MauiProgram
     return builder.Build();
   }
 
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+  [NotNull]
+  public static IReadOnlyDependencyContainer? Container { get; private set; }
 
-  public static IReadOnlyDependencyContainer Container { get; private set; }
-
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+  public static void ExitApp()
+  {
+    var appLifetime = Container.LocateOrDefault<ILifetime>();
+    appLifetime?.End();
+  }
 
   [GeneratedRegex(@"^.+\.log$")]
   private static partial Regex GetLogFileRegex();
