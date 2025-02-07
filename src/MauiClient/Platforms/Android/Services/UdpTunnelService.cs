@@ -84,11 +84,11 @@ public class UdpTunnelService : global::Android.App.Service, IUdpTunnelService, 
               .Where(_ => _.TunnelGuid == tunnel.TunnelGuid)
               .ToArray();
 
-            var rxAvg = tunnelEntries.Average(_ => (long)_.RxBytePerSecond);
-            var txAvg = tunnelEntries.Average(_ => (long)_.TxBytePerSecond);
+            var rxAvg = tunnelEntries.Average(_ => _.RxBytePerSecond);
+            var txAvg = tunnelEntries.Average(_ => _.TxBytePerSecond);
             var txTotal = tunnelEntries.Max(_ => _.TotalTxBytes);
             var rxTotal = tunnelEntries.Max(_ => _.TotalRxBytes);
-            listAvg.Add(new TunnelStatWithName(tunnel.TunnelGuid, tunnel.TunnelName, (ulong)txAvg, (ulong)rxAvg, txTotal, rxTotal));
+            listAvg.Add(new TunnelStatWithName(tunnel.TunnelGuid, tunnel.TunnelName, (long)txAvg, (long)rxAvg, txTotal, rxTotal));
           }
 
           BuildOrUpdateServiceNotification(listAvg, false, p_serviceLifetime.Token);
@@ -157,19 +157,13 @@ public class UdpTunnelService : global::Android.App.Service, IUdpTunnelService, 
       text += $"[{tunnel.TunnelName}] Rx: {((double)tunnel.RxBytePerSecond).BytesPerSecondToString()}; Tx: {((double)tunnel.TxBytePerSecond).BytesPerSecondToString()}\n";
 
     text = text.TrimEnd('\n');
-    var subText = $"🔼 {_tunnels.Sum(_ => (long)_.TotalTxBytes).ToHumanBytes()} 🔽 {_tunnels.Sum(_ => (long)_.TotalRxBytes).ToHumanBytes()}";
 
     var stopAppIntent = new Intent();
     stopAppIntent.SetClass(context, Class);
     stopAppIntent.SetAction(STOP_APP_ACTION);
     var stopAppActivity = PendingIntent.GetForegroundService(context, 0, stopAppIntent, PendingIntentFlags.Immutable);
-
-    //var layoutSmall = new RemoteViews(context.PackageName, Resource.Layout.notification_small);
-    //layoutSmall.SetTextViewText(Resource.Id.notification_small_title, title);
-
-    //var layoutLarge = new RemoteViews(context.PackageName, Resource.Layout.notification_large);
-    //layoutLarge.SetTextViewText(Resource.Id.notification_large_title, title);
-    //layoutLarge.SetTextViewText(Resource.Id.notification_large_body, text);
+    var stopAppAction = new Notification.Action.Builder(Resource.Drawable.close, "Stop all", stopAppActivity)
+      .Build();
 
     var builder = new Notification.Builder(this, SERVICE_NOTIFICATION_CHANNEL)
        .SetContentIntent(openAppIntent)
@@ -181,8 +175,8 @@ public class UdpTunnelService : global::Android.App.Service, IUdpTunnelService, 
        //.SetCustomBigContentView(layoutLarge)
        .SetContentTitle(title)
        .SetContentText(text)
-       .SetSubText(subText)
-       .AddAction(new Notification.Action(Resource.Drawable.abc_edit_text_material, "Stop all", stopAppActivity));
+       .SetSubText($"🔼 {_tunnels.Sum(_ => _.TotalTxBytes).ToHumanBytes()} 🔽 {_tunnels.Sum(_ => _.TotalRxBytes).ToHumanBytes()}")
+       .AddAction(stopAppAction);
 
 #pragma warning disable CA1416 // Validate platform compatibility
     if (_firstShow && Build.VERSION.SdkInt >= BuildVersionCodes.S)

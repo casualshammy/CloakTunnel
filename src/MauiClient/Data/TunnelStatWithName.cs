@@ -3,7 +3,7 @@
 public record TunnelStatWithName(
   Guid TunnelGuid,
   string TunnelName, 
-  ulong TxBytePerSecond, 
-  ulong RxBytePerSecond,
-  ulong TotalTxBytes,
-  ulong TotalRxBytes);
+  long TxBytePerSecond, 
+  long RxBytePerSecond,
+  long TotalTxBytes,
+  long TotalRxBytes);

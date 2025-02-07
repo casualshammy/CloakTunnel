@@ -97,10 +97,10 @@ internal class TunnelsControllerImpl : IUdpTunnelCtrl, IAppModule<IUdpTunnelCtrl
             var entry = new TunnelStatWithName(
               conf.Guid,
               conf.Name,
-              _.TxBytePerSecond,
-              _.RxBytePerSecond,
-              _.TotalBytesSent,
-              _.TotalBytesReceived);
+              (long)_.TxBytePerSecond,
+              (long)_.RxBytePerSecond,
+              (long)_.TotalBytesSent,
+              (long)_.TotalBytesReceived);
 
             p_statsSubj.OnNext(entry);
           }, _life);
