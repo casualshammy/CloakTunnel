@@ -158,12 +158,12 @@ public class UdpTunnelService : global::Android.App.Service, IUdpTunnelService, 
 
     text = text.TrimEnd('\n');
 
-    var stopAppIntent = new Intent();
-    stopAppIntent.SetClass(context, Class);
-    stopAppIntent.SetAction(STOP_APP_ACTION);
-    var stopAppActivity = PendingIntent.GetForegroundService(context, 0, stopAppIntent, PendingIntentFlags.Immutable);
-    var stopAppAction = new Notification.Action.Builder(Resource.Drawable.close, "Stop all", stopAppActivity)
-      .Build();
+    //var stopAppIntent = new Intent();
+    //stopAppIntent.SetClass(context, Class);
+    //stopAppIntent.SetAction(STOP_APP_ACTION);
+    //var stopAppActivity = PendingIntent.GetForegroundService(context, 0, stopAppIntent, PendingIntentFlags.Immutable);
+    //var stopAppAction = new Notification.Action.Builder(Resource.Drawable.close, "Stop all", stopAppActivity)
+    //  .Build();
 
     var builder = new Notification.Builder(this, SERVICE_NOTIFICATION_CHANNEL)
        .SetContentIntent(openAppIntent)
@@ -175,8 +175,8 @@ public class UdpTunnelService : global::Android.App.Service, IUdpTunnelService, 
        //.SetCustomBigContentView(layoutLarge)
        .SetContentTitle(title)
        .SetContentText(text)
-       .SetSubText($"🔼 {_tunnels.Sum(_ => _.TotalTxBytes).ToHumanBytes()} 🔽 {_tunnels.Sum(_ => _.TotalRxBytes).ToHumanBytes()}")
-       .AddAction(stopAppAction);
+       .SetSubText($"🔼 {_tunnels.Sum(_ => _.TotalTxBytes).ToHumanBytes()} 🔽 {_tunnels.Sum(_ => _.TotalRxBytes).ToHumanBytes()}");
+       //.AddAction(stopAppAction);
 
 #pragma warning disable CA1416 // Validate platform compatibility
     if (_firstShow && Build.VERSION.SdkInt >= BuildVersionCodes.S)
