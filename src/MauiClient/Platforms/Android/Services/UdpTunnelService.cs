@@ -155,7 +155,7 @@ public class UdpTunnelService : global::Android.App.Service, IUdpTunnelService, 
     //var title = $"{_tunnels.Count} tunnels is up";
     var contentTextSb = new StringBuilder();
     foreach (var tunnel in _tunnels)
-      contentTextSb.AppendLine($"[{tunnel.TunnelName}] 🔻 {((double)tunnel.RxBytePerSecond).BytesPerSecondToString()} 🔺 {((double)tunnel.TxBytePerSecond).BytesPerSecondToString()}");
+      contentTextSb.AppendLine($"[{tunnel.TunnelName}] 🔻 {tunnel.RxBytePerSecond.BytesPerSecondToString(1)} 🔺 {tunnel.TxBytePerSecond.BytesPerSecondToString(1)}");
 
     var contentText = contentTextSb.ToString().TrimEnd('\n');
 

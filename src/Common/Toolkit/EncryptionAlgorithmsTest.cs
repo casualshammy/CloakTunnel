@@ -17,7 +17,7 @@ public static class EncryptionAlgorithmsTest
       if (result.ResultMs == null)
         _logger.Warn($"Algorithm '{algoSlug}' is not supported on this platform");
       else
-        _logger.Info($"{algoSlug}: {(result.WorkVolumeBytes / (result.ResultMs.Value / 1000d)).BytesPerSecondToString()}");
+        _logger.Info($"{algoSlug}: {(result.WorkVolumeBytes / (result.ResultMs.Value / 1000d)).BytesPerSecondToString(1)}");
     }
     _logger.Warn($"==================================================================");
   }

@@ -88,13 +88,15 @@ public partial class BenchmarkPage : CContentPage
             OnPropertyChanged(nameof(DataReady));
             p_chart.SetEntries(p_results.Select(_ =>
             {
-              var barColor = SKColor.Parse(GetColorFromString(_.Key));
+              var hexBarColor = GetColorFromString(_.Key);
+              var barColor = SKColor.Parse(hexBarColor);
+              var barColorBrightness = hexBarColor.GetYiqBrightnessFromHexColor();
               return new Controls.VerticalBarChartEntry(
                 _.Key,
                 _.Value ?? 0,
                 null,
                 barColor,
-                SKColors.Black);
+                barColorBrightness > 128 ? SKColors.Black : SKColors.White);
             }));
           });
         }
@@ -115,7 +117,7 @@ public partial class BenchmarkPage : CContentPage
   public static string GetColorFromString(string _input)
   {
     var hash = MD5.HashData(Encoding.UTF8.GetBytes(_input));
-    var result = Convert.ToHexString(hash)[..3];
+    var result = Convert.ToHexString(hash)[..6];
     return result;
   }
 

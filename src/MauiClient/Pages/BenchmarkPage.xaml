@@ -21,9 +21,7 @@
                CornerRadius="20"
                Padding="15"
                Margin="10, 10, 10, 10">
-            <controls:VerticalBarChart 
-                x:Name="p_chart" 
-                HeightRequest="300" />
+            <controls:VerticalBarChart x:Name="p_chart" />
         </Frame>
         
 
@@ -38,7 +36,7 @@
                 CornerRadius="100"
                 Background="{StaticResource PrimaryBrush}"
                 Clicked="Benchmark_Clicked" 
-                SemanticProperties.Description="" AutomationProperties.HelpText="" AutomationId=""/>
+                SemanticProperties.Description="" AutomationProperties.Name="" AutomationId=""/>
             <ImageButton 
                 x:Name="p_roundImageButton"
                 AbsoluteLayout.LayoutBounds="10, 10"

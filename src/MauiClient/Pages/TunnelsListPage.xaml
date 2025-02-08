@@ -16,7 +16,7 @@
         <Grid
             AbsoluteLayout.LayoutFlags="SizeProportional"
             AbsoluteLayout.LayoutBounds="0, 0, 1, 0.9"
-            SemanticProperties.Description="" AutomationProperties.HelpText="" AutomationId="">
+            SemanticProperties.Description="" AutomationProperties.Name="" AutomationId="">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
@@ -34,7 +34,7 @@
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
                         <VerticalStackLayout>
-                            <Grid SemanticProperties.Description="{Binding Name}" AutomationProperties.HelpText="{Binding Name}" AutomationId="">
+                            <Grid SemanticProperties.Description="{Binding Name}" AutomationProperties.Name="{Binding Name}" AutomationId="">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="60" />
@@ -77,7 +77,7 @@
             AbsoluteLayout.LayoutBounds="0.9, 0.95">
             <Button
                 x:Name="p_addTunnelConfButton"
-                SemanticProperties.Description="" AutomationProperties.HelpText="" AutomationId=""
+                SemanticProperties.Description="" AutomationProperties.Name="" AutomationId=""
                 WidthRequest="70"
                 HeightRequest="70"
                 CornerRadius="45"
