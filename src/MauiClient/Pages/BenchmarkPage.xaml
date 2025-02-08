@@ -37,7 +37,8 @@
                 HeightRequest="200"
                 CornerRadius="100"
                 Background="{StaticResource PrimaryBrush}"
-                Clicked="Benchmark_Clicked" />
+                Clicked="Benchmark_Clicked" 
+                SemanticProperties.Description="" AutomationProperties.HelpText="" AutomationId=""/>
             <ImageButton 
                 x:Name="p_roundImageButton"
                 AbsoluteLayout.LayoutBounds="10, 10"
