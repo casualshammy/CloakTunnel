@@ -5,19 +5,30 @@
     xmlns:toolkit="clr-namespace:CloakTunnel.MauiClient.Toolkit"
     xmlns:views="clr-namespace:CloakTunnel.MauiClient.ViewModels"
     xmlns:controls="clr-namespace:CloakTunnel.MauiClient.Controls"
+    xmlns:skia="clr-namespace:SkiaSharp.Views.Maui.Controls;assembly=SkiaSharp.Views.Maui.Controls"
+    xmlns:pages="clr-namespace:CloakTunnel.MauiClient.Pages"
     x:Class="CloakTunnel.MauiClient.Pages.BenchmarkPage"
     Title="Benchmark">
 
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition />
-        </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition />
-            <RowDefinition Height="100" />
-        </Grid.RowDefinitions>
+    <Grid x:Name="p_mainGrid"
+          RowDefinitions="*,*,100"
+          ColumnDefinitions="*">
+
+        <Frame Grid.Row="0"
+               BackgroundColor="LightGray"
+               BorderColor="Black"
+               IsVisible="{Binding DataReady }"
+               CornerRadius="20"
+               Padding="15"
+               Margin="10, 10, 10, 10">
+            <controls:VerticalBarChart 
+                x:Name="p_chart" 
+                HeightRequest="300" />
+        </Frame>
+        
 
         <AbsoluteLayout
+            Grid.Row="1"
             HorizontalOptions="CenterAndExpand"
             VerticalOptions="CenterAndExpand">
             <Button
@@ -37,7 +48,7 @@
         </AbsoluteLayout>
         <Label
             x:Name="p_progressLabel"
-            Grid.Row="1"
+            Grid.Row="2"
             HorizontalOptions="CenterAndExpand"
             VerticalOptions="Start"
             Text=""

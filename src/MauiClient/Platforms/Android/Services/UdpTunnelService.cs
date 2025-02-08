@@ -10,6 +10,7 @@ using Ax.Fw.SharedTypes.Interfaces;
 using CloakTunnel.MauiClient.Data;
 using CloakTunnel.MauiClient.Interfaces;
 using System.Reactive.Linq;
+using System.Text;
 
 namespace CloakTunnel.MauiClient.Platforms.Android.Services;
 
@@ -151,32 +152,26 @@ public class UdpTunnelService : global::Android.App.Service, IUdpTunnelService, 
     var context = global::Android.App.Application.Context;
     var openAppIntent = PendingIntent.GetActivity(context, 0, Platform.CurrentActivity?.Intent, PendingIntentFlags.Immutable);
 
-    var title = $"{_tunnels.Count} tunnels is up";
-    var text = string.Empty;
+    //var title = $"{_tunnels.Count} tunnels is up";
+    var contentTextSb = new StringBuilder();
     foreach (var tunnel in _tunnels)
-      text += $"[{tunnel.TunnelName}] Rx: {((double)tunnel.RxBytePerSecond).BytesPerSecondToString()}; Tx: {((double)tunnel.TxBytePerSecond).BytesPerSecondToString()}\n";
+      contentTextSb.AppendLine($"[{tunnel.TunnelName}] 🔻 {((double)tunnel.RxBytePerSecond).BytesPerSecondToString()} 🔺 {((double)tunnel.TxBytePerSecond).BytesPerSecondToString()}");
 
-    text = text.TrimEnd('\n');
+    var contentText = contentTextSb.ToString().TrimEnd('\n');
 
-    //var stopAppIntent = new Intent();
-    //stopAppIntent.SetClass(context, Class);
-    //stopAppIntent.SetAction(STOP_APP_ACTION);
-    //var stopAppActivity = PendingIntent.GetForegroundService(context, 0, stopAppIntent, PendingIntentFlags.Immutable);
-    //var stopAppAction = new Notification.Action.Builder(Resource.Drawable.close, "Stop all", stopAppActivity)
-    //  .Build();
+    var stopAppIntent = new Intent();
+    stopAppIntent.SetClass(context, Class);
+    stopAppIntent.SetAction(STOP_APP_ACTION);
+    var stopAppPendingIntent = PendingIntent.GetForegroundService(context, 0, stopAppIntent, PendingIntentFlags.Immutable);
 
-    var builder = new Notification.Builder(this, SERVICE_NOTIFICATION_CHANNEL)
+    var builder = new NotificationCompat.Builder(this, SERVICE_NOTIFICATION_CHANNEL)
        .SetContentIntent(openAppIntent)
        .SetSmallIcon(Resource.Drawable.infinity)
        .SetOnlyAlertOnce(true)
        .SetOngoing(true)
-       //.SetStyle(new Notification.DecoratedCustomViewStyle())
-       //.SetCustomContentView(layoutSmall)
-       //.SetCustomBigContentView(layoutLarge)
-       .SetContentTitle(title)
-       .SetContentText(text)
-       .SetSubText($"🔼 {_tunnels.Sum(_ => _.TotalTxBytes).ToHumanBytes()} 🔽 {_tunnels.Sum(_ => _.TotalRxBytes).ToHumanBytes()}");
-       //.AddAction(stopAppAction);
+       .SetContentText(contentText)
+       .SetSubText($"🔼 {_tunnels.Sum(_ => _.TotalTxBytes).ToHumanBytes(1)} 🔽 {_tunnels.Sum(_ => _.TotalRxBytes).ToHumanBytes(1)}")
+       .AddAction(Resource.Drawable.close, "Stop all", stopAppPendingIntent);
 
 #pragma warning disable CA1416 // Validate platform compatibility
     if (_firstShow && Build.VERSION.SdkInt >= BuildVersionCodes.S)

@@ -6,6 +6,18 @@
     xmlns:local="clr-namespace:CloakTunnel.MauiClient.Pages"
     Shell.FlyoutBehavior="Flyout">
 
+    <Shell.FlyoutHeaderTemplate>
+        <DataTemplate>
+            <Grid 
+                BackgroundColor="Black"
+                HeightRequest="200">
+                <Image Aspect="AspectFill"
+                   Source="kandinsky_infinity"
+                   Opacity="0.8" />
+            </Grid>
+        </DataTemplate>
+    </Shell.FlyoutHeaderTemplate>
+
     <ShellContent
         Title="Tunnels"
         Icon="infinity.svg"

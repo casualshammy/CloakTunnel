@@ -7,8 +7,8 @@
 		</PropertyGroup>
 
 		<ItemGroup>
-				<PackageReference Include="Ax.Fw" Version="14.5.244" />
-				<PackageReference Include="Ax.Fw.Log" Version="14.5.244" />
+				<PackageReference Include="Ax.Fw" Version="14.5.245" />
+				<PackageReference Include="Ax.Fw.Log" Version="14.5.245" />
 				<PackageReference Include="Websocket.Client" Version="5.1.2" />
 		</ItemGroup>
 

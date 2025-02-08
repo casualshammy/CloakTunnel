@@ -31,6 +31,7 @@
 				<PackageReference Include="CommunityToolkit.Maui" Version="[2.0.0]" />
 				<PackageReference Include="Microsoft.Maui.Controls" Version="8.0.100" />
 				<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.100" />
+				<PackageReference Include="SkiaSharp.Views.Maui.Controls" Version="3.116.1" />
 		</ItemGroup>
 
 		<ItemGroup>
@@ -73,6 +74,9 @@
 		</ItemGroup>
 
 		<ItemGroup>
+				<Compile Update="Controls\VerticalBarChart.xaml.cs">
+				  <DependentUpon>VerticalBarChart.xaml</DependentUpon>
+				</Compile>
 				<Compile Update="Pages\BenchmarkPage.xaml.cs">
 						<DependentUpon>BenchmarkPage.xaml</DependentUpon>
 				</Compile>
@@ -85,6 +89,9 @@
 		</ItemGroup>
 
 		<ItemGroup>
+				<MauiXaml Update="Controls\VerticalBarChart.xaml">
+				  <Generator>MSBuild:Compile</Generator>
+				</MauiXaml>
 				<MauiXaml Update="Controls\OptionsItem.xaml">
 						<Generator>MSBuild:Compile</Generator>
 				</MauiXaml>

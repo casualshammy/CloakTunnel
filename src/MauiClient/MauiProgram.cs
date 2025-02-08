@@ -1,18 +1,20 @@
-﻿using Ax.Fw;
+﻿using Android.Util;
+using Ax.Fw;
 using Ax.Fw.DependencyInjection;
 using Ax.Fw.Log;
+using Ax.Fw.SharedTypes.Data.Log;
 using Ax.Fw.SharedTypes.Interfaces;
-using CommunityToolkit.Maui;
+using CloakTunnel.MauiClient.Data;
 using CloakTunnel.MauiClient.Interfaces;
 using CloakTunnel.MauiClient.Modules.PageController;
 using CloakTunnel.MauiClient.Modules.PreferencesStorage;
 using CloakTunnel.MauiClient.Modules.TunnelsConfCtrl;
 using CloakTunnel.MauiClient.Modules.TunnelsController;
 using CloakTunnel.MauiClient.Platforms.Android.Services;
-using System.Text.RegularExpressions;
+using CommunityToolkit.Maui;
+using SkiaSharp.Views.Maui.Controls.Hosting;
 using System.Diagnostics.CodeAnalysis;
-using Android.Util;
-using CloakTunnel.MauiClient.Data;
+using System.Text.RegularExpressions;
 
 namespace CloakTunnel.MauiClient;
 
@@ -33,7 +35,19 @@ public static partial class MauiProgram
       Directory.CreateDirectory(logsFolder);
 
     var logger = new GenericLog()
-      .AttachFileLog(() => Path.Combine(logsFolder, $"{DateTimeOffset.UtcNow:yyyy-MM-dd}.log"), TimeSpan.FromSeconds(1));
+      .AttachFileLog(() => Path.Combine(logsFolder, $"{DateTimeOffset.UtcNow:yyyy-MM-dd}.log"), TimeSpan.FromSeconds(1))
+      .AttachCustomLog(_logEntry =>
+      {
+        static string getLogEntryString(LogEntry _entry) 
+          => $"| {_entry.GetTypePrefix()} | {_entry.Time:dd.MM.yyyy HH:mm:ss.fff} || {_entry.Scope} || {_entry.Text}";
+
+        if (_logEntry.Type == LogEntryType.INFO)
+          Log.Info(AppConsts.LOG_TAG, getLogEntryString(_logEntry));
+        else if (_logEntry.Type == LogEntryType.WARN)
+          Log.Warn(AppConsts.LOG_TAG, getLogEntryString(_logEntry));
+        else if (_logEntry.Type == LogEntryType.ERROR)
+          Log.Error(AppConsts.LOG_TAG, getLogEntryString(_logEntry));
+      });
 
     lifetime.ToDisposeOnEnded(logger);
 
@@ -73,6 +87,7 @@ public static partial class MauiProgram
     builder
       .UseMauiApp<App>()
       .UseMauiCommunityToolkit()
+      .UseSkiaSharp()
       .ConfigureFonts(_fonts =>
       {
         _fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
