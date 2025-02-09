@@ -14,6 +14,7 @@ namespace CloakTunnel.Common.Clients.Parts;
 public abstract class CommonTunnelClient : ITunnelClient
 {
   private readonly ReplaySubject<TunnelStat> p_stats;
+  private readonly ReplaySubject<Exception> p_bindErrorSubj;
   private readonly ConcurrentDictionary<EndPoint, ITunnelClientInfo> p_clients = new();
   protected readonly ILog p_log;
   protected readonly TunnelClientOptions p_options;
@@ -31,6 +32,7 @@ public abstract class CommonTunnelClient : ITunnelClient
     p_lifetime = _lifetime;
 
     p_stats = _lifetime.ToDisposeOnEnded(new ReplaySubject<TunnelStat>(1));
+    p_bindErrorSubj = _lifetime.ToDisposeOnEnded(new ReplaySubject<Exception>(1));
 
     var log = p_log["udp-input"];
     var bindEndpoint = IPEndPoint.Parse($"{p_options.BindUri.Host}:{p_options.BindUri.Port}");
@@ -44,11 +46,13 @@ public abstract class CommonTunnelClient : ITunnelClient
     catch (SocketException sex) when (sex.SocketErrorCode == SocketError.AddressAlreadyInUse)
     {
       log.Error($"Can't bind to address {bindEndpoint}: already in use");
+      p_bindErrorSubj.OnNext(sex);
       return;
     }
     catch (Exception ex)
     {
       log.Error($"Can't bind to address {bindEndpoint}: {ex.Message}");
+      p_bindErrorSubj.OnNext(ex);
       return;
     }
 
@@ -92,6 +96,7 @@ public abstract class CommonTunnelClient : ITunnelClient
   }
 
   public IObservable<TunnelStat> Stats => p_stats;
+  public IObservable<Exception> BindErrorOccured => p_bindErrorSubj;
 
   public void DropAllClients()
   {

@@ -1,4 +1,7 @@
-﻿using Android.Content;
+﻿using Android.App;
+using Android.Content;
+using Android.OS;
+using AndroidX.Core.App;
 using Ax.Fw.DependencyInjection;
 using Ax.Fw.Extensions;
 using Ax.Fw.SharedTypes.Interfaces;
@@ -92,6 +95,9 @@ internal class TunnelsControllerImpl : IUdpTunnelCtrl, IAppModule<IUdpTunnelCtrl
           else
             tunnel = new WsTunnelClient(options, _life, log);
 
+          tunnel.BindErrorOccured
+            .Subscribe(_ex => ShowTunnelBindErrorNotification(conf.Name, _ex), _life);
+
           tunnel.Stats.Subscribe(_ =>
           {
             var entry = new TunnelStatWithName(
@@ -113,8 +119,8 @@ internal class TunnelsControllerImpl : IUdpTunnelCtrl, IAppModule<IUdpTunnelCtrl
               if (_list.Count == 0)
                 return;
 
-              var totalRx = _list.Sum(_ => (float)_.RxBytePerSecond);
-              var totalTx = _list.Sum(_ => (float)_.TxBytePerSecond);
+              var totalRx = _list.Sum(_ => (long)_.RxBytePerSecond);
+              var totalTx = _list.Sum(_ => (long)_.TxBytePerSecond);
 
               if (totalTx > 0 && totalRx == 0)
               {
@@ -156,5 +162,37 @@ internal class TunnelsControllerImpl : IUdpTunnelCtrl, IAppModule<IUdpTunnelCtrl
   }
 
   public IObservable<TunnelStatWithName> TunnelsStats { get; }
+
+  private void ShowTunnelBindErrorNotification(
+    string _tunnelName, 
+    Exception _ex)
+  {
+    var context = global::Android.App.Application.Context;
+    var notificationManager = (NotificationManager)context.GetSystemService(Context.NotificationService)!;
+
+    if (Build.VERSION.SdkInt > BuildVersionCodes.SV2 && Platform.CurrentActivity != null)
+      if (ActivityCompat.CheckSelfPermission(Platform.CurrentActivity, "android.permission.POST_NOTIFICATIONS") != global::Android.Content.PM.Permission.Granted)
+        ActivityCompat.RequestPermissions(Platform.CurrentActivity, ["android.permission.POST_NOTIFICATIONS"], AppConsts.REQUEST_POST_NOTIFICATIONS_CODE);
+
+    var channel = new NotificationChannel(
+      AppConsts.NOTIFICATION_CHANNEL_TUNNEL_BIND_ERROR, 
+      "Notify when tunnel is failed to start", 
+      NotificationImportance.Default);
+
+    channel.SetShowBadge(true);
+    notificationManager.CreateNotificationChannel(channel);
+
+    var openAppIntent = PendingIntent.GetActivity(context, 0, Platform.CurrentActivity?.Intent, PendingIntentFlags.Immutable);
+
+    var builder = new NotificationCompat.Builder(context, AppConsts.NOTIFICATION_CHANNEL_TUNNEL_BIND_ERROR)
+       .SetContentIntent(openAppIntent)
+       .SetSmallIcon(Resource.Drawable.infinity)
+       .SetOnlyAlertOnce(true)
+       .SetContentTitle($"Tunnel is failed to start")
+       .SetContentText($"Tunnel '{_tunnelName}' is failed to start: {_ex.Message}");
+
+    var notification = builder.Build();
+    notificationManager.Notify(AppConsts.NOTIFICATION_ID_TUNNEL_BIND_ERROR, notification);
+  }
 
 }

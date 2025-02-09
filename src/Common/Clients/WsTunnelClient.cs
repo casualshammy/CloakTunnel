@@ -78,6 +78,7 @@ public class WsTunnelClient : CommonTunnelClient
       var wsClient = new WebsocketClient(new Uri($"{p_options.ForwardUri}?key={keyHash}"))
       {
         IsReconnectionEnabled = true,
+        ReconnectTimeout = TimeSpan.FromMinutes(5),
       };
 
       lifetime.ToDisposeOnEnding(wsClient);

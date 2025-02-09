@@ -36,7 +36,7 @@
                 CornerRadius="100"
                 Background="{StaticResource PrimaryBrush}"
                 Clicked="Benchmark_Clicked" 
-                SemanticProperties.Description="" AutomationProperties.Name="" AutomationId=""/>
+                SemanticProperties.Description="Start benchmark" AutomationProperties.Name="Start benchmark" AutomationId="start_benchmark"/>
             <ImageButton 
                 x:Name="p_roundImageButton"
                 AbsoluteLayout.LayoutBounds="10, 10"

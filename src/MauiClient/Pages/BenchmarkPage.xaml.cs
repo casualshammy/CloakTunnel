@@ -88,7 +88,7 @@ public partial class BenchmarkPage : CContentPage
             OnPropertyChanged(nameof(DataReady));
             p_chart.SetEntries(p_results.Select(_ =>
             {
-              var hexBarColor = GetColorFromString(_.Key);
+              var hexBarColor = _.Key.ExpressAsRgba();
               var barColor = SKColor.Parse(hexBarColor);
               var barColorBrightness = hexBarColor.GetYiqBrightnessFromHexColor();
               return new Controls.VerticalBarChartEntry(
@@ -112,13 +112,6 @@ public partial class BenchmarkPage : CContentPage
         btn.Background = Data.AppConsts.COLOR_UP_TUNNEL_OFF;
       }
     }
-  }
-
-  public static string GetColorFromString(string _input)
-  {
-    var hash = MD5.HashData(Encoding.UTF8.GetBytes(_input));
-    var result = Convert.ToHexString(hash)[..6];
-    return result;
   }
 
 }

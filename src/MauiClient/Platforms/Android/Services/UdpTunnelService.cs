@@ -19,13 +19,7 @@ public class UdpTunnelService : global::Android.App.Service, IUdpTunnelService, 
 {
   public static IUdpTunnelService ExportInstance(IAppDependencyCtx _ctx) => new UdpTunnelService();
 
-  private const string SERVICE_NOTIFICATION_CHANNEL = "ServiceChannel";
-  private const string GENERAL_NOTIFICATION_CHANNEL = "GeneralChannel";
-  private const string STOP_TUNNEL_ID_ACTION_EXTRA = "tunnel-id";
   private const string STOP_APP_ACTION = "STOP_APP";
-  private const int SERVICE_NOTIFICATION_ID = 100;
-  private const int BATTERY_OPTIMIZATION_NOTIFICATION_ID = 200;
-  private const int REQUEST_POST_NOTIFICATIONS = 1000;
   private readonly NotificationManager p_notificationManager;
   private readonly IReadOnlyLifetime p_lifetime;
   private readonly IUdpTunnelCtrl p_udpTunnelCtrl;
@@ -61,10 +55,10 @@ public class UdpTunnelService : global::Android.App.Service, IUdpTunnelService, 
 
       if (Build.VERSION.SdkInt >= BuildVersionCodes.Q)
 #pragma warning disable CA1416 // Validate platform compatibility
-        StartForeground(SERVICE_NOTIFICATION_ID, notification, global::Android.Content.PM.ForegroundService.TypeDataSync);
+        StartForeground(AppConsts.NOTIFICATION_ID_SERVICE, notification, global::Android.Content.PM.ForegroundService.TypeDataSync);
 #pragma warning restore CA1416 // Validate platform compatibility
       else
-        StartForeground(SERVICE_NOTIFICATION_ID, notification);
+        StartForeground(AppConsts.NOTIFICATION_ID_SERVICE, notification);
 
       p_udpTunnelCtrl.TunnelsStats
         .Buffer(TimeSpan.FromSeconds(3))
@@ -140,11 +134,11 @@ public class UdpTunnelService : global::Android.App.Service, IUdpTunnelService, 
   {
     if (_firstShow && Build.VERSION.SdkInt > BuildVersionCodes.SV2 && Platform.CurrentActivity != null)
       if (ActivityCompat.CheckSelfPermission(Platform.CurrentActivity, "android.permission.POST_NOTIFICATIONS") != global::Android.Content.PM.Permission.Granted)
-        ActivityCompat.RequestPermissions(Platform.CurrentActivity, ["android.permission.POST_NOTIFICATIONS"], REQUEST_POST_NOTIFICATIONS);
+        ActivityCompat.RequestPermissions(Platform.CurrentActivity, ["android.permission.POST_NOTIFICATIONS"], AppConsts.REQUEST_POST_NOTIFICATIONS_CODE);
 
     if (_firstShow)
     {
-      var channel = new NotificationChannel(SERVICE_NOTIFICATION_CHANNEL, "Notify when tunnels' states are changed", NotificationImportance.Min);
+      var channel = new NotificationChannel(AppConsts.NOTIFICATION_CHANNEL_SERVICE, "Notify when tunnels' states are changed", NotificationImportance.Min);
       channel.SetShowBadge(false);
       p_notificationManager.CreateNotificationChannel(channel);
     }
@@ -164,13 +158,13 @@ public class UdpTunnelService : global::Android.App.Service, IUdpTunnelService, 
     stopAppIntent.SetAction(STOP_APP_ACTION);
     var stopAppPendingIntent = PendingIntent.GetForegroundService(context, 0, stopAppIntent, PendingIntentFlags.Immutable);
 
-    var builder = new NotificationCompat.Builder(this, SERVICE_NOTIFICATION_CHANNEL)
+    var builder = new NotificationCompat.Builder(this, AppConsts.NOTIFICATION_CHANNEL_SERVICE)
        .SetContentIntent(openAppIntent)
        .SetSmallIcon(Resource.Drawable.infinity)
        .SetOnlyAlertOnce(true)
        .SetOngoing(true)
        .SetContentText(contentText)
-       .SetSubText($"🔼 {_tunnels.Sum(_ => _.TotalTxBytes).ToHumanBytes(1)} 🔽 {_tunnels.Sum(_ => _.TotalRxBytes).ToHumanBytes(1)}")
+       .SetSubText($"🔽 {_tunnels.Sum(_ => _.TotalRxBytes).ToHumanBytes(1)} 🔼 {_tunnels.Sum(_ => _.TotalTxBytes).ToHumanBytes(1)}")
        .AddAction(Resource.Drawable.close, "Stop all", stopAppPendingIntent);
 
 #pragma warning disable CA1416 // Validate platform compatibility
@@ -181,7 +175,7 @@ public class UdpTunnelService : global::Android.App.Service, IUdpTunnelService, 
     Notification notification = builder.Build();
 
     if (!_ct.IsCancellationRequested)
-      p_notificationManager.Notify(SERVICE_NOTIFICATION_ID, notification);
+      p_notificationManager.Notify(AppConsts.NOTIFICATION_ID_SERVICE, notification);
 
     return notification;
   }
@@ -198,9 +192,9 @@ public class UdpTunnelService : global::Android.App.Service, IUdpTunnelService, 
     if (ignoring != true)
     {
       if (Build.VERSION.SdkInt > BuildVersionCodes.SV2 && Platform.CurrentActivity != null)
-        ActivityCompat.RequestPermissions(Platform.CurrentActivity, new[] { "android.permission.POST_NOTIFICATIONS" }, REQUEST_POST_NOTIFICATIONS);
+        ActivityCompat.RequestPermissions(Platform.CurrentActivity, ["android.permission.POST_NOTIFICATIONS"], AppConsts.REQUEST_POST_NOTIFICATIONS_CODE);
 
-      var channel = new NotificationChannel(GENERAL_NOTIFICATION_CHANNEL, "General events", NotificationImportance.High);
+      var channel = new NotificationChannel(AppConsts.NOTIFICATION_CHANNEL_GENERAL, "General events", NotificationImportance.High);
       channel.SetShowBadge(true);
       p_notificationManager.CreateNotificationChannel(channel);
 
@@ -225,7 +219,7 @@ public class UdpTunnelService : global::Android.App.Service, IUdpTunnelService, 
           $"(it may be also called 'Allow background activity')" +
           $"\nClick on this notification to open app's settings");
 
-      var builder = new Notification.Builder(this, GENERAL_NOTIFICATION_CHANNEL)
+      var builder = new Notification.Builder(this, AppConsts.NOTIFICATION_CHANNEL_GENERAL)
        .SetContentIntent(notificationIntent)
        .SetSmallIcon(Resource.Drawable.infinity)
        .SetOnlyAlertOnce(true)
@@ -235,7 +229,7 @@ public class UdpTunnelService : global::Android.App.Service, IUdpTunnelService, 
        .SetContentTitle("Battery optimization is enabled");
 
       var notification = builder.Build();
-      p_notificationManager.Notify(BATTERY_OPTIMIZATION_NOTIFICATION_ID, notification);
+      p_notificationManager.Notify(AppConsts.NOTIFICATION_ID_BATTERY_OPTIMIZATION, notification);
       p_batteryOptimizationWarnDisplayed = true;
     }
   }

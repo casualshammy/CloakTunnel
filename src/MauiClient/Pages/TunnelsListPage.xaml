@@ -16,7 +16,7 @@
         <Grid
             AbsoluteLayout.LayoutFlags="SizeProportional"
             AbsoluteLayout.LayoutBounds="0, 0, 1, 0.9"
-            SemanticProperties.Description="" AutomationProperties.Name="" AutomationId="">
+            SemanticProperties.Description="List of tunnel configurations" AutomationProperties.Name="List of tunnel configurations" AutomationId="tunnel_configurations">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
@@ -58,13 +58,14 @@
                                 </VerticalStackLayout>
                                 <Switch
                                     Grid.Column="1"
+                                    OnColor="{StaticResource PrimaryBrush}"
                                     Margin="0, 0, 10, 0"
                                     IsToggled="{Binding Enabled }" />
                             </Grid>
                             <Rectangle
                                 VerticalOptions="End"
-                                Fill="{AppThemeBinding Light=Blue, Dark=CadetBlue}"
-                                Stroke="{AppThemeBinding Light=Blue, Dark=CadetBlue}"
+                                Fill="{StaticResource PrimaryBrush}"
+                                Stroke="{StaticResource PrimaryBrush}"
                                 Margin="-20, 0"
                                 HeightRequest="1"/>
                         </VerticalStackLayout>
@@ -72,24 +73,17 @@
                 </CollectionView.ItemTemplate>
             </CollectionView>
         </Grid>
-        <Grid
-            AbsoluteLayout.LayoutFlags="PositionProportional"
-            AbsoluteLayout.LayoutBounds="0.9, 0.95">
-            <Button
-                x:Name="p_addTunnelConfButton"
-                SemanticProperties.Description="" AutomationProperties.Name="" AutomationId=""
+        <Button x:Name="p_addTunnelConfButton"
+                AbsoluteLayout.LayoutFlags="PositionProportional"
+                AbsoluteLayout.LayoutBounds="0.9, 0.95"
+                ImageSource="plus_circle.svg"
                 WidthRequest="70"
                 HeightRequest="70"
-                CornerRadius="45"
+                CornerRadius="20"
                 Background="{StaticResource PrimaryBrush}"
-                Clicked="AddTunnel_Clicked">
-            </Button>
-            <ImageButton 
-                WidthRequest="70"
-                HeightRequest="70"
-                Source="plus_circle.svg"
-                InputTransparent="True"/>
-        </Grid>
+                Clicked="AddTunnel_Clicked"
+                SemanticProperties.Description="Add new tunnel configuration" AutomationProperties.Name="Add new tunnel configuration" AutomationId="add_new_tunnel">
+        </Button>
     </AbsoluteLayout>
 
 
