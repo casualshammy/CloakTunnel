@@ -16,7 +16,9 @@
         <Grid
             AbsoluteLayout.LayoutFlags="SizeProportional"
             AbsoluteLayout.LayoutBounds="0, 0, 1, 0.9"
-            SemanticProperties.Description="List of tunnel configurations" AutomationProperties.Name="List of tunnel configurations" AutomationId="tunnel_configurations">
+            SemanticProperties.Description="Grid with the list of tunnel configurations" 
+            AutomationProperties.Name="Grid with the list of tunnel configurations" 
+            AutomationId="grid_tunnel_configurations">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
@@ -30,11 +32,12 @@
                 Grid.Row="0"
                 ItemsSource="{Binding Data}" 
                 SelectionMode="Single"
-                SelectionChanged="OnItemSelected">
+                SelectionChanged="OnItemSelected"
+                SemanticProperties.Description="List of tunnel configurations" AutomationProperties.Name="List of tunnel configurations" AutomationId="tunnel_configurations">
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
                         <VerticalStackLayout>
-                            <Grid SemanticProperties.Description="{Binding Name}" AutomationProperties.Name="{Binding Name}" AutomationId="">
+                            <Grid SemanticProperties.Description="{Binding SemanticText}" AutomationProperties.Name="{Binding SemanticText}" AutomationId="{Binding Guid}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="60" />

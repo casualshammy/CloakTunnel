@@ -23,35 +23,24 @@
                Margin="10, 10, 10, 10">
             <controls:VerticalBarChart x:Name="p_chart" />
         </Frame>
-        
 
-        <AbsoluteLayout
-            Grid.Row="1"
-            HorizontalOptions="CenterAndExpand"
-            VerticalOptions="CenterAndExpand">
-            <Button
+        <Button x:Name="p_benchmarkBtn"
+                Grid.Row="1"
                 AbsoluteLayout.LayoutBounds="0, 0"
                 WidthRequest="200"
                 HeightRequest="200"
-                CornerRadius="100"
+                CornerRadius="45"
+                ImageSource="benchmark.svg"
                 Background="{StaticResource PrimaryBrush}"
                 Clicked="Benchmark_Clicked" 
                 SemanticProperties.Description="Start benchmark" AutomationProperties.Name="Start benchmark" AutomationId="start_benchmark"/>
-            <ImageButton 
-                x:Name="p_roundImageButton"
-                AbsoluteLayout.LayoutBounds="10, 10"
-                WidthRequest="180"
-                HeightRequest="180"
-                Source="benchmark.svg"
-                InputTransparent="True" />
-        </AbsoluteLayout>
-        <Label
-            x:Name="p_progressLabel"
-            Grid.Row="2"
-            HorizontalOptions="CenterAndExpand"
-            VerticalOptions="Start"
-            Text=""
-            FontSize="Large"/>
+
+        <Label Grid.Row="2"
+               x:Name="p_progressLabel"
+               HorizontalOptions="CenterAndExpand"
+               VerticalOptions="Start"
+               Text=""
+               FontSize="Large"/>
     </Grid>
 
 

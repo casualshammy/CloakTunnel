@@ -154,6 +154,7 @@ public class TunnelEditViewModel : ObservableModel
       OnPropertyChanged(nameof(Enabled));
     }
   }
+  public string SemanticText => $"Tunnel '{Name}' (Id: '{Guid}')";
 
   public ICommand NameCommand { get; }
   public ICommand RemoteAddressCommand { get; }

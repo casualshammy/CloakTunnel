@@ -43,18 +43,18 @@ public partial class BenchmarkPage : CContentPage
     if (lifetime == null)
       return;
 
-    var animation = new Animation
-    {
-      { 0, 0.5, new Animation(_rotation => p_roundImageButton.Scale = _rotation, 1d, 0.75d, Easing.SinInOut) },
-      { 0.5, 1,  new Animation(_rotation => p_roundImageButton.Scale = _rotation, 0.75d, 1d, Easing.SinInOut) }
-    };
-
     var btn = _sender as Button;
     if (btn != null)
     {
       btn.IsEnabled = false;
       btn.Background = Data.AppConsts.COLOR_UP_TUNNEL_ON;
     }
+
+    var animation = new Animation
+    {
+      { 0, 0.5, new Animation(_animValue => p_benchmarkBtn.Scale = _animValue, 1d, 0.9d, Easing.SinInOut) },
+      { 0.5, 1, new Animation(_animValue => p_benchmarkBtn.Scale = _animValue, 0.9d, 1d, Easing.SinInOut) }
+    };
 
     try
     {
@@ -67,7 +67,7 @@ public partial class BenchmarkPage : CContentPage
         16, 
         2000, 
         null, 
-        (_, __) => p_roundImageButton.ScaleTo(1d, 250), 
+        (_, __) => p_benchmarkBtn.ScaleTo(1d, 250), 
         () => true);
 
       await Task.Run(() =>
