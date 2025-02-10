@@ -126,6 +126,13 @@ public partial class VerticalBarChart : ContentView
       }
       else
       {
+        var text = entry.Title;
+        while (text.Length > 2 && textSize.Width > height - 2 * margin)
+        {
+          text = text[..^1];
+          textFont.MeasureText(text, out textSize, textPaint);
+        }
+
         canvas.Save();
 
         canvas.Translate(
@@ -134,7 +141,7 @@ public partial class VerticalBarChart : ContentView
 
         canvas.RotateDegrees(-90);
         canvas.DrawText(
-          entry.Title,
+          text,
           0,
           0,
           SKTextAlign.Left,

@@ -29,7 +29,7 @@
                 AbsoluteLayout.LayoutBounds="0, 0"
                 WidthRequest="200"
                 HeightRequest="200"
-                CornerRadius="45"
+                CornerRadius="20"
                 ImageSource="benchmark.svg"
                 Background="{StaticResource PrimaryBrush}"
                 Clicked="Benchmark_Clicked" 
