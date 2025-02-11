@@ -70,6 +70,12 @@ public partial class BenchmarkPage : CContentPage
         (_, __) => p_benchmarkBtn.ScaleTo(1d, 250), 
         () => true);
 
+      p_benchmarkBtn.WidthRequest = 100;
+      p_benchmarkBtn.HeightRequest = 100;
+      p_mainGrid.RowDefinitions[0].Height = new GridLength(1, GridUnitType.Star);
+      p_mainGrid.RowDefinitions[1].Height = new GridLength(110, GridUnitType.Absolute);
+      p_mainGrid.RowDefinitions[2].Height = new GridLength(50, GridUnitType.Absolute);
+
       await Task.Run(() =>
       {
         foreach (var result in EncryptionAlgorithmsTest.Benchmark(lifetime, updateProgress))
@@ -82,12 +88,6 @@ public partial class BenchmarkPage : CContentPage
 
           _ = MainThread.InvokeOnMainThreadAsync(() =>
           {
-            p_benchmarkBtn.WidthRequest = 100;
-            p_benchmarkBtn.HeightRequest = 100;
-            p_mainGrid.RowDefinitions[0].Height = new GridLength(1, GridUnitType.Star);
-            p_mainGrid.RowDefinitions[1].Height = new GridLength(110, GridUnitType.Absolute);
-            p_mainGrid.RowDefinitions[2].Height = new GridLength(50, GridUnitType.Absolute);
-
             OnPropertyChanged(nameof(DataReady));
             p_chart.SetEntries(p_results.Select(_ =>
             {

@@ -92,7 +92,7 @@ public class Program
           && Uri.TryCreate(_forwardUri, UriKind.Absolute, out var forwardUri)
           && EncryptionToolkit.ENCRYPTION_ALG_SLUG_REVERSE.TryGetValue(_cipher, out var encAlgo))
           options = new TunnelClientOptions(
-            bindUri.Scheme.StartsWith("udp") ? EndpointType.Udp : EndpointType.Websocket,
+            forwardUri.Scheme.StartsWith("udp") ? EndpointType.Udp : EndpointType.Websocket,
             bindUri,
             forwardUri,
             encAlgo,

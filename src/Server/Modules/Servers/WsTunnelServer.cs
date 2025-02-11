@@ -67,8 +67,8 @@ public class WsTunnelServer : CommonTunnelServer
 
             var newClient = AllocateNewClient(
               new WsTunnelServerClientInfo(p_ws, _msg.Session),
-              _msg.Data, 
-              out var alg);
+              _msg.Data,
+              out var encryption);
 
             if (newClient == null)
             {
@@ -77,7 +77,7 @@ public class WsTunnelServer : CommonTunnelServer
             }
 
             p_clients.TryAdd(_msg.Session.Id, client = newClient);
-            log.Info($"Client __'{_msg.Session.Id}'__ **connected**; total clients: {p_clients.Count}");
+            log.Info($"Client __'{_msg.Session.Id}'__ **connected** (enc: {encryption}); total clients: {p_clients.Count}");
           }
 
           var dataToSend = client.Decryptor.Decrypt(_msg.Data);

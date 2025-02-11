@@ -85,8 +85,8 @@ public class UdpTunnelServer : CommonTunnelServer
 
             var newClient = AllocateNewClient(
               new UdpTunnelServerClientInfo(_inputSocket, inputClientEndpoint), 
-              receivedSpan, 
-              out var alg);
+              receivedSpan,
+              out var encryption);
 
             if (newClient == null)
             {
@@ -95,7 +95,7 @@ public class UdpTunnelServer : CommonTunnelServer
             }
 
             p_clients.TryAdd(inputClientEndpoint, client = newClient);
-            _log.Info($"Client __'{inputClientEndpoint}'__ **connected**; total clients: {p_clients.Count}");
+            _log.Info($"Client __'{inputClientEndpoint}'__ **connected** (enc: {encryption}); total clients: {p_clients.Count}");
           }
 
           var dataToSend = client.Decryptor.Decrypt(receivedSpan);

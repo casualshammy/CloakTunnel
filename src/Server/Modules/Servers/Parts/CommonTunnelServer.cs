@@ -73,44 +73,54 @@ public abstract class CommonTunnelServer
     var lifetime = p_lifetime.GetChildLifetime();
     if (lifetime != null)
     {
-      if (!CheckEncryption(_firstChunk))
+      if (!TryGuessEncryption(_firstChunk, out var _algo))
       {
         _encryptionAlgorithm = EncryptionAlgorithm.None;
         return null;
       }
 
-      var decryptor = EncryptionToolkit.GetCrypto(p_options.Encryption, lifetime, p_options.PassKey);
+      var decryptor = EncryptionToolkit.GetCrypto(_algo, lifetime, p_options.PassKey);
 
       var localServiceSocket = lifetime.ToDisposeOnEnding(new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp));
       var thread = new Thread(() => CreateForwardSocketRoutine(
                    localServiceSocket,
                    _tunnelServerClientInfo,
-                   p_options.Encryption,
+                   _algo,
                    lifetime))
       { Priority = ThreadPriority.Highest };
       thread.Start();
 
-      _encryptionAlgorithm = p_options.Encryption;
+      _encryptionAlgorithm = _algo;
       return new(localServiceSocket, lifetime, decryptor) { Timestamp = Environment.TickCount64 };
     }
 
     throw new OperationCanceledException();
   }
 
-  private bool CheckEncryption(Span<byte> _span)
+  private bool TryGuessEncryption(
+    Span<byte> _span, 
+    out EncryptionAlgorithm _encryption)
   {
     using var lifetime = p_lifetime.GetChildLifetime();
     if (lifetime == null)
-      return false;
-
-    try
     {
-      var decryptor = EncryptionToolkit.GetCrypto(p_options.Encryption, lifetime, p_options.PassKey);
-      decryptor.Decrypt(_span);
-      return true;
+      _encryption = EncryptionAlgorithm.None;
+      return false;
     }
-    catch { }
 
+    foreach (var algo in EncryptionToolkit.ALL_CYPHERS)
+    {
+      try
+      {
+        var decryptor = EncryptionToolkit.GetCrypto(algo, lifetime, p_options.PassKey);
+        decryptor.Decrypt(_span);
+        _encryption = algo;
+        return true;
+      }
+      catch { }
+    }
+
+    _encryption = EncryptionAlgorithm.None;
     return false;
   }
 

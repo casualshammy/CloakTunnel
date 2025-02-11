@@ -79,23 +79,14 @@ public class Program
         .WithValidation(_arg => _arg.Length >= 8, "Argument must be a string at least 8 characters long")
         .WithExamples(Utilities.GetRandomString(8, false))
         .IsRequired()
-      .Parameter<string>("-c", "--cipher")
-        .WithDescription($"Cipher algorithm to use in encryption (default: {EncryptionToolkit.ENCRYPTION_ALG_SLUG[EncryptionAlgorithm.AesGcmObfs256]})")
-        .WithValidation(
-          EncryptionToolkit.ENCRYPTION_ALG_SLUG_REVERSE.ContainsKey, 
-          $"Encryption algorithm must be one of: {string.Join(", ", EncryptionToolkit.ENCRYPTION_ALG_SLUG.Values)}")
-        .WithExamples(EncryptionToolkit.ENCRYPTION_ALG_SLUG[EncryptionAlgorithm.AesGcmObfs256], EncryptionToolkit.ENCRYPTION_ALG_SLUG.Values.ToArray())
-        .IsOptionalWithDefault(EncryptionToolkit.ENCRYPTION_ALG_SLUG[EncryptionAlgorithm.AesGcmObfs256])
-      .Call(_cipher => _passKey => _forwardUri => _bindUri =>
+      .Call(_passKey => _forwardUri => _bindUri =>
       {
         if (Uri.TryCreate(_bindUri, UriKind.Absolute, out var bindUri) 
-          && Uri.TryCreate(_forwardUri, UriKind.Absolute, out var forwardUri)
-          && EncryptionToolkit.ENCRYPTION_ALG_SLUG_REVERSE.TryGetValue(_cipher, out var encAlgo))
+          && Uri.TryCreate(_forwardUri, UriKind.Absolute, out var forwardUri))
           options = new TunnelServerOptions(
             bindUri.Scheme.StartsWith("udp") ? EndpointType.Udp : EndpointType.Websocket,
             bindUri,
             forwardUri,
-            encAlgo,
             _passKey);
       })
       .Parse(args);
