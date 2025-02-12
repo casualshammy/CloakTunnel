@@ -61,7 +61,6 @@
                                 </VerticalStackLayout>
                                 <Switch
                                     Grid.Column="1"
-                                    OnColor="{StaticResource PrimaryBrush}"
                                     Margin="0, 0, 10, 0"
                                     IsToggled="{Binding Enabled }" />
                             </Grid>
