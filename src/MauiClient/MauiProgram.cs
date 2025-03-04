@@ -27,7 +27,7 @@ public static partial class MauiProgram
     var lifetime = new Lifetime();
     lifetime.DoOnEnded(() =>
     {
-      Application.Current?.Quit();
+      MainThread.InvokeOnMainThreadAsync(() => Application.Current?.Quit());
     });
 
     var logsFolder = Path.Combine(FileSystem.Current.AppDataDirectory, "logs");
@@ -52,7 +52,7 @@ public static partial class MauiProgram
     lifetime.ToDisposeOnEnded(logger);
 
     var appStartedVersionStr = $"============= app is launched ({AppInfo.Current.VersionString}) =============";
-    var line = new string(Enumerable.Repeat('=', appStartedVersionStr.Length).ToArray());
+    var line = new string([.. Enumerable.Repeat('=', appStartedVersionStr.Length)]);
     logger.Info(line);
     logger.Info(appStartedVersionStr);
     logger.Info(line);
